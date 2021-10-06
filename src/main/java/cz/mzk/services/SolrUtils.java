@@ -1,12 +1,15 @@
 package cz.mzk.services;
 
 import org.apache.solr.client.solrj.SolrQuery;
+import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
 import org.apache.solr.client.solrj.impl.XMLResponseParser;
 import org.apache.solr.client.solrj.response.QueryResponse;
 import org.apache.solr.common.SolrDocumentList;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 public class SolrUtils {
@@ -44,5 +47,26 @@ public class SolrUtils {
             e.printStackTrace();
         }
         return result.toString();
+    }
+
+    public String getPids(String q){ //TODO should return List<String>, max 50000 pids
+        StringBuilder pids = new StringBuilder();
+        //List<String> pids = new ArrayList<>();
+        SolrQuery query = new SolrQuery();
+        query.setQuery(q);
+        query.addField("PID");
+        query.add("rows", "50000");
+
+        try {
+            QueryResponse response = solr.query(query);
+            SolrDocumentList docList = response.getResults();
+            for (org.apache.solr.common.SolrDocument entries : docList) {
+                pids.append(entries.getFieldValue("PID"));
+                pids.append("\n");
+            }
+        } catch (SolrServerException | IOException e) {
+            e.printStackTrace();
+        }
+        return pids.toString();
     }
 }

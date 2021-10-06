@@ -19,7 +19,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        final String scriptName = "GetSDNNT";
+        final String scriptName = "checkYearOfPublication";
         Script script = null;
 
         switch (scriptName){
@@ -49,6 +49,10 @@ public class Main {
             }
             case "changePrefix": {
                 script = new changePrefix();
+                break;
+            }
+            case "checkYearOfPublication": {
+                script = new checkYearOfPublication();
                 break;
             }
             default:{

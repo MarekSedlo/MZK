@@ -4,7 +4,7 @@ import cz.mzk.services.FileIO;
 
 import java.util.*;
 
-import cz.mzk.services.SdnntConnection;
+import cz.mzk.services.SdnntConnectionOLD;
 import cz.mzk.services.SolrUtils;
 
 /*
@@ -91,7 +91,7 @@ public class GetSDNNT implements Script{
         Object statusUuid = "";
         Object statusCnb = "";
         Object licence = "";
-        SdnntConnection sdnntCon;
+        SdnntConnectionOLD sdnntCon;
         for (String rootUuid:rootDnntDocsUuids){
             cnb = "";
             statusUuid = "";
@@ -99,7 +99,7 @@ public class GetSDNNT implements Script{
             licence = "";
 
             url = sdnntHost + "?uuid=" + rootUuid;
-            sdnntCon = new SdnntConnection(url);
+            sdnntCon = new SdnntConnectionOLD(url);
 
             statusUuid = sdnntCon.getSdnntJsonItem("status");
             licence = sdnntCon.getSdnntJsonItem("licence");
@@ -112,7 +112,7 @@ public class GetSDNNT implements Script{
                     statusUuid = "false";
                     cnb = getCnb(rootUuid);
                     url = sdnntHost + "?cnb=" + cnb;
-                    sdnntCon = new SdnntConnection(url);
+                    sdnntCon = new SdnntConnectionOLD(url);
                     statusCnb = sdnntCon.getSdnntJsonItem("status");
                     licence = sdnntCon.getSdnntJsonItem("licence");
                     if (statusCnb instanceof Boolean){
@@ -161,7 +161,7 @@ public class GetSDNNT implements Script{
 
     @Override
     public void start(Properties prop) {
-        String sdnntHost = prop.getProperty("SDNNT_HOST_API");
+        String sdnntHost = prop.getProperty("SDNNT_HOST_OAI_API");
         System.out.println("DNNTO:");
         createUuidsForDNNTremove("DNNTO", sdnntHost);
         System.out.println("DNNTT:");

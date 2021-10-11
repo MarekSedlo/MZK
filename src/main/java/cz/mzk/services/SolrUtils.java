@@ -1,5 +1,6 @@
 package cz.mzk.services;
 
+import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.HttpSolrClient;
@@ -49,24 +50,44 @@ public class SolrUtils {
         return result.toString();
     }
 
-    public String getPids(String q){ //TODO should return List<String>, max 50000 pids
-        StringBuilder pids = new StringBuilder();
-        //List<String> pids = new ArrayList<>();
+    // this function returns list of uuids by given query parameter
+    // query parameter is the same string like in solr web GUI
+
+    public List<String> getPids(String q){
+        List<String> allPids = new ArrayList<>();
+        final int maxBatchSize = 50000;
+        int start = 0;
+        List<String> batchPids = getPidsBatch(q, start, maxBatchSize);
+        allPids.addAll(batchPids);
+
+        while (batchPids.size() == maxBatchSize){
+            start += maxBatchSize;
+            batchPids.clear();
+            batchPids = getPidsBatch(q, start, maxBatchSize);
+            allPids.addAll(batchPids);
+        }
+        return allPids;
+    }
+
+    //subfunction of function getPids
+    //one call of this functions is one solr query
+    //returns batch of pids
+    private List<String> getPidsBatch(String q, int start, int rows){
+        List<String> pidsBatch = new ArrayList<>();
         SolrQuery query = new SolrQuery();
         query.setQuery(q);
         query.addField("PID");
-        query.add("rows", "50000");
-
+        query.add("start", Integer.toString(start));
+        query.add("rows", Integer.toString(rows));
         try {
             QueryResponse response = solr.query(query);
             SolrDocumentList docList = response.getResults();
             for (org.apache.solr.common.SolrDocument entries : docList) {
-                pids.append(entries.getFieldValue("PID"));
-                pids.append("\n");
+                pidsBatch.add((String)entries.getFieldValue("PID") + "\n");
             }
         } catch (SolrServerException | IOException e) {
             e.printStackTrace();
         }
-        return pids.toString();
+        return pidsBatch;
     }
 }

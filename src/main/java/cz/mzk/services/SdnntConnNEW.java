@@ -72,11 +72,15 @@ public class SdnntConnNEW {
         JSONObject jsonObj = new JSONObject(jsonResponse);
         JSONArray docs = jsonObj.getJSONArray("docs");
         JSONArray licences = null;
-
-        for (int i = 0; i<docs.length(); i++)
-            licences = docs.getJSONObject(i).getJSONArray("license");
-
         ArrayList<String> jsonArrToList = new ArrayList<String>();
+
+        for (int i = 0; i<docs.length(); i++){
+            if (docs.getJSONObject(i).has("license")) //licenses found in JSON
+                licences = docs.getJSONObject(i).getJSONArray("license");
+            else
+                return jsonArrToList;
+        }
+
         if (licences != null) {
             for (int i=0;i<licences.length();i++){
                 jsonArrToList.add(licences.getString(i));

@@ -9,7 +9,8 @@ import java.util.List;
 import java.util.Properties;
 
 /*
-//TODO should be changed
+//TODO POZOR DELAL JSEM TU ZMENY NA ZASTAVOVANI JINYCH PROCESU, UDELEJ TO PAK OBECNE
+uzitecny odkaz : http://krameriusbatch.mzk.cz/search/api/v4.6/processes?offset=81280&resultSize=1000
 Author: Marek Sedlo
 Description:
 INPUT: input json file "processesALL.json", which contains json of processes we want to filter and kill
@@ -44,7 +45,32 @@ public class CancelTheProcesses implements Script {
         }
     }
 
+    //mazani planovanych procesu, ktere jsou reindexace
     private List<String> parse(List<String> procs){
+        List<String> uuids = new ArrayList<>();
+        String separator = "uuid\":\"";
+        String procuuid = null;
+
+        for (String proc : procs){
+            procuuid = proc;
+            if (proc.contains("reindex")){
+                int objIndex = proc.indexOf(separator);
+                objIndex += separator.length();
+
+                procuuid = proc.substring(objIndex);
+                procuuid = procuuid.split("\"")[0];
+                uuids.add(procuuid);
+            }
+        }
+        return uuids;
+    }
+
+
+
+
+
+    //TODO ATTENTION! this function was for BATCH STARTED
+    /*private List<String> parse(List<String> procs){
         boolean isNextReindex = false;
         List<String> uuids = new ArrayList<>();
         String separator = "uuid\":\"";
@@ -68,7 +94,7 @@ public class CancelTheProcesses implements Script {
                 isNextReindex = false;
         }
         return uuids;
-    }
+    }*/
 
     // function for reading the file
     // reading file char by char and separate it to strings splitted by char '}'
@@ -81,7 +107,7 @@ public class CancelTheProcesses implements Script {
 
             inputStream = new FileReader(path);
 
-            String proccess = null;
+            String proccess = "";
             int c;
             while ((c = inputStream.read()) != -1) {
                 proccess += ((char) c);

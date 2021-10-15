@@ -33,8 +33,13 @@ public class SolrUtils {
     public String getSolrParameterByPid(String pid, String parameter){
         StringBuilder result = new StringBuilder();
         SolrQuery query = new SolrQuery();
-        //query.setQuery("PID:\"uuid:" + pid + "\"").setRows(1);
-        query.setQuery("PID:\"uuid:" + pid + "\"");
+        String uuid = pid;
+
+        if (pid.startsWith("uuid:")) //remove prefix if exists
+            uuid = pid.substring(5);
+
+        //query.setQuery("PID:\"uuid:" + uuid + "\"").setRows(1);
+        query.setQuery("PID:\"uuid:" + uuid + "\"");
         query.addField(parameter);
 
         try {
@@ -42,7 +47,8 @@ public class SolrUtils {
             SolrDocumentList docList = response.getResults();
             for (org.apache.solr.common.SolrDocument entries : docList) {
                 result.append(entries.getFieldValue(parameter));
-                result.append("\n");
+                if (entries.getFieldValue(parameter) != null)
+                    result.append("\n");
             }
         } catch (Exception e){
             e.printStackTrace();
@@ -83,7 +89,7 @@ public class SolrUtils {
             QueryResponse response = solr.query(query);
             SolrDocumentList docList = response.getResults();
             for (org.apache.solr.common.SolrDocument entries : docList) {
-                pidsBatch.add((String)entries.getFieldValue("PID") + "\n");
+                pidsBatch.add((String)entries.getFieldValue("PID"));
             }
         } catch (SolrServerException | IOException e) {
             e.printStackTrace();

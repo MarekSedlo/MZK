@@ -19,7 +19,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        final String scriptName = "checkYearOfPublication";
+        final String scriptName = "CompareLicenses";
         Script script = null;
 
         switch (scriptName){
@@ -53,6 +53,14 @@ public class Main {
             }
             case "checkYearOfPublication": {
                 script = new checkYearOfPublication();
+                break;
+            }
+            case "checkSysno": {
+                script = new checkSysno();
+                break;
+            }
+            case "CompareLicenses": {
+                script = new CompareLicenses();
                 break;
             }
             default:{

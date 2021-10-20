@@ -30,6 +30,7 @@ public class SolrUtils {
         solr.setParser(new XMLResponseParser());
     }
 
+    //this function adds newline right after the parameter
     public String getSolrParameterByPid(String pid, String parameter){
         StringBuilder result = new StringBuilder();
         SolrQuery query = new SolrQuery();
@@ -76,7 +77,7 @@ public class SolrUtils {
     }
 
     //subfunction of function getPids
-    //one call of this functions is one solr query
+    //one call of this function is one solr query
     //returns batch of pids
     private List<String> getPidsBatch(String q, int start, int rows){
         List<String> pidsBatch = new ArrayList<>();

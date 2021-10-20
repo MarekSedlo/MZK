@@ -23,7 +23,7 @@ public class CompareLicenses implements Script {
         List<String> addDNNTT = new ArrayList<>();
 
         for (String uuid : input){
-            SdnntConnNEW sdnntConnectionNEW = new SdnntConnNEW(sdnntHost + "?query=" + uuid);
+            SdnntConnNEW sdnntConnectionNEW = new SdnntConnNEW(sdnntHost, "?query=" + uuid);
             List<String> SDNNTlicences = sdnntConnectionNEW.getSdnntLicences();
             String MZKlics = solrConn.getSolrParameterByPid(uuid, "dnnt-labels");
             List<String> MZKlicenses = new ArrayList<>();

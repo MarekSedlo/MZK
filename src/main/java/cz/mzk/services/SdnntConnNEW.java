@@ -32,8 +32,10 @@ public class SdnntConnNEW {
     //private List<Object> list;
     //private boolean isSingleJsonItem = false;
 
-    public SdnntConnNEW(String sdnntHost){
+    //query parameter example https://195.113.133.53/sdnnt/api/v1.0/catalog?query=uuid:df939db0-c44f-11e2-8b87-005056827e51
+    public SdnntConnNEW(String sdnntHost, String query){
         this.sdnntHost = sdnntHost;
+        query = sdnntHost + query;
 
         String resp = "";
 
@@ -43,7 +45,7 @@ public class SdnntConnNEW {
         headers.set("accept", "application/json");
         headers.set("X-API-KEY", apikey);
         HttpEntity entity = new HttpEntity(headers);
-        ResponseEntity<String> responseEntity = restTemplate.exchange(sdnntHost, HttpMethod.GET, entity, String.class);
+        ResponseEntity<String> responseEntity = restTemplate.exchange(query, HttpMethod.GET, entity, String.class);
         resp = responseEntity.getBody();
 
         assert resp != null;
@@ -87,5 +89,19 @@ public class SdnntConnNEW {
             }
         }
         return jsonArrToList;
+    }
+
+    public String getJsonResponse(){
+        return this.jsonResponse;
+    }
+
+
+    public boolean isDocumentFound(){
+        JSONObject jsonObj = new JSONObject(jsonResponse);
+        int numFound = jsonObj.getInt("numFound");
+        JSONArray docs = jsonObj.getJSONArray("docs");
+        int docsLength = docs.length();
+
+        return (numFound != 0) || (docsLength != 0);
     }
 }

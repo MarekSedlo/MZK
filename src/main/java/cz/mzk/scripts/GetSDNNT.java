@@ -12,6 +12,7 @@ import cz.mzk.services.SolrUtils;
     Description:
     Script for issue 452, deleting dnnt labels for given list of documents (public documents, which are not in SDNNT)
     Result is for fofola usage
+    This SCRIPT IS DEPRECATED AND IS USING OLD SDNNT OAI API
 */
 
 public class GetSDNNT implements Script{

@@ -11,47 +11,49 @@ import org.yaml.snakeyaml.events.Event;
     Author: Marek Sedlo
     Description:
     Script for issue 493
-    this script DOES NOT check if it has no licence and should have, it just checks if existing licenses dnntt and dnnto are same in the SDNNT
-    TODO ATTENTION!!!!!!!!!!!!!! Pozor, tenhle skript taha data ze spatneho mista v SDNNT! PREDELAT!!!
 */
 
 public class checkYearOfPublication implements Script {
     public static final boolean DEBUG = false;
     private List<String> LOG = new ArrayList<>();
+    private List<String> removeDNNTO = new ArrayList<>();
+    private List<String> removeDNNTT = new ArrayList<>();
+    private List<String> addDNNTO = new ArrayList<>();
+    private List<String> addDNNTT = new ArrayList<>();
     FileIO fileService = new FileIO();
     SolrUtils solrConn = new SolrUtils();
-    /*List<String> DNNTO = new ArrayList<>();
-    List<String> DNNTT = new ArrayList<>();
-    List<String> COVID = new ArrayList<>();*/
     List<String> forReindex = new ArrayList<>();
-    StringBuilder results = new StringBuilder("");
 
 
     @Override
     public void start(Properties prop) {
         HashMap<String, Integer> pers = new HashMap<>();
         HashMap<String, Integer> perVols = new HashMap<>();
-        HashMap<String, Integer> mons = new HashMap<>();
-        HashMap<String, Integer> monUnits = new HashMap<>();
+        HashMap<String, Integer> mons2008 = new HashMap<>();
+        HashMap<String, Integer> monUnits2008 = new HashMap<>();
+        HashMap<String, Integer> mons2001 = new HashMap<>();
+        HashMap<String, Integer> monUnits2001 = new HashMap<>();
 
         final String sdnntHost = prop.getProperty("SDNNT_HOST_PRIVATE_PART_API_CATALOG");
 
 
         //Periodika 2011+ nemaji mit zadny dnnt label, musi byt v soulasu se SDNNT
-        String periodicalFrom2011 = "fedora.model:periodical AND datum_begin:[2011 TO *]";
-        String periodicalvolumeFrom2011 = "fedora.model:periodicalvolume AND datum_begin:[2011 TO *]";
+        String periodicalFrom2011 = "fedora.model:periodical AND datum_begin:[2011 TO *]"; //841
+        String periodicalvolumeFrom2011 = "fedora.model:periodicalvolume AND datum_begin:[2011 TO *]"; //1920
         //Monografie 2008+ nemaji mit dnnt-t --> nemaji mit zadny dnnt label, musi byt v souladu se SDNNT
-        String monographFrom2008 = "fedora.model:monograph AND datum_begin:[2008 TO *]";
-        String monographunitFrom2008 = "fedora.model:monographunit AND datum_begin:[2008 TO *]";
+        String monographFrom2008 = "fedora.model:monograph AND datum_begin:[2008 TO *]"; //35007
+        String monographunitFrom2008 = "fedora.model:monographunit AND datum_begin:[2008 TO *]"; //1154
         //Monografie 2001+ nemaji mit dnnt-o, musi byt v soulasu se SDNNT
-        String monographFrom2001 = "fedora.model:monograph AND datum_begin:[2001 TO *]";
-        String monographunitFrom2001 = "fedora.model:monographunit AND datum_begin:[2001 TO *]";
+        String monographFrom2001 = "fedora.model:monograph AND datum_begin:[2001 TO *]"; //75498
+        String monographunitFrom2001 = "fedora.model:monographunit AND datum_begin:[2001 TO *]"; //2087
 
-
-        results.append("\nPeriodical 2011+\n");
         if (!DEBUG){
             pers = getSolrDocuments(periodicalFrom2011);
-            //perVols = getSolrDocuments(periodicalvolumeFrom2011);
+            perVols = getSolrDocuments(periodicalvolumeFrom2011);
+            mons2008 = getSolrDocuments(monographFrom2008);
+            monUnits2008 = getSolrDocuments(monographunitFrom2008);
+            mons2001 = getSolrDocuments(monographFrom2001);
+            monUnits2001 = getSolrDocuments(monographunitFrom2001);
         }
 
         if (DEBUG){
@@ -60,41 +62,18 @@ public class checkYearOfPublication implements Script {
             pers.put("uuid:94cd1ef0-0b88-11ea-9e5a-5ef3fc9bb22f", 2012);
             pers.put("uuid:169c1730-3d6f-11e4-bdb5-005056825209", 9999);
             pers.put("uuid:0557fa00-f23f-11e3-97c9-001018b5eb5c", 9999);
+            perVols.put("uuid:69016ad0-5eba-11ea-a5e6-005056825209", 2018);
         }
 
-        compareSDNNTlicences(sdnntHost, pers);
-
-
-        /*results.append("\nPeriodical 2011+\n");
-        getDnntDocuments(periodicalFrom2011);
-        checkPidsInSDNNT(sdnntHost, true, "Periodical 2011+\n");
-
-        results.append("Periodicalvolume 2011+\n");
-        getDnntDocuments(periodicalvolumeFrom2011);
-        checkPidsInSDNNT(sdnntHost, true, "Periodicalvolume 2011+\n");
-
-
-        results.append("Monograph 2008+\n");
-        getDnntDocuments(monographFrom2008);
-        checkPidsInSDNNT(sdnntHost, true, "Monograph 2008+\n");
-
-        results.append("Monographunit 2008+\n");
-        getDnntDocuments(monographunitFrom2008);
-        checkPidsInSDNNT(sdnntHost, true, "Monographunit 2008+\n");
-
-
-        results.append("Monograph 2001+\n");
-        getDnntDocuments(monographFrom2001);
-        checkPidsInSDNNT(sdnntHost, false, "Monograph 2001+\n");
-
-        results.append("Monographunit 2001+\n");
-        getDnntDocuments(monographunitFrom2001);
-        checkPidsInSDNNT(sdnntHost, false, "Monographunit 2001+\n");
+        compareSDNNTlicences(sdnntHost, pers, "periodical");
+        compareSDNNTlicences(sdnntHost, perVols, "periodicalvolume");
+        compareSDNNTlicences(sdnntHost, mons2008, "monograph");
+        compareSDNNTlicences(sdnntHost, monUnits2008, "monographunit");
+        compareSDNNTlicences(sdnntHost, mons2001, "monograph");
+        compareSDNNTlicences(sdnntHost, monUnits2001, "monographunit");
 
 
         fileService.toOutputFile(LOG, "IO/493/LOG");
-        logDocsForReindex();*/
-        System.out.println(results);
     }
 
     private HashMap<String, Integer> getSolrDocuments(String solrQuery){
@@ -109,14 +88,112 @@ public class checkYearOfPublication implements Script {
         return result;
     }
 
-    private void compareSDNNTlicences(String sdnntHost, HashMap<String, Integer> docsToCompare){
+    private void compareSDNNTlicences(String sdnntHost, HashMap<String, Integer> docsToCompare, String fedoraModel){
+        removeDNNTO.clear();
+        removeDNNTT.clear();
+        addDNNTO.clear();
+        addDNNTT.clear();
+        forReindex.clear();
+
+        LOG.add(fedoraModel);
         for (String pid : docsToCompare.keySet()){
+            LOG.add("CHECKING UUID: " + pid);
             SdnntConnNEW sdnntConnNEW = findDocInSDNNT(sdnntHost, pid);
-            if (sdnntConnNEW != null) //document was not found in SDNNT
-                if (sdnntConnNEW.getJsonResponse().contains(pid)) //result is probably right, here check licences
-                    results.append("SDNNT result contains pid: ").append(pid).append("\n");
-                else
-                    results.append("SDNNT result NOT contains pid: ").append(pid).append("\n");
+            if (sdnntConnNEW != null) //document found in SDNNT
+                if (sdnntConnNEW.getDocsFound() > 1)
+                    LOG.add("SDNNT response has multiple docs found for this doc: " + pid);
+                else {
+                    if (isSdnntFoundDocSame(sdnntConnNEW.getJsonResponse(), pid)){
+                        LOG.add("Documents matches!");
+                        //compare licences
+                        List<String> SDNNTlicences = new ArrayList<>();
+                        if (fedoraModel.equals("periodical") || fedoraModel.equals("monograph")) //it's root
+                            SDNNTlicences = sdnntConnNEW.getSdnntLicences(true);
+                        else //it's child
+                            SDNNTlicences = sdnntConnNEW.getSdnntLicences(false);
+                        String MZKlics = solrConn.getSolrParameterByPid(pid, "dnnt-labels");
+                        compareLics(SDNNTlicences, MZKlics, pid, docsToCompare.get(pid));
+                    }
+                }
+        }
+        fileService.toOutputFile(removeDNNTO, "IO/493/removeDNNTO" + fedoraModel + ".txt");
+        fileService.toOutputFile(removeDNNTT, "IO/493/removeDNNTT" + fedoraModel + ".txt");
+        fileService.toOutputFile(addDNNTO, "IO/493/addDNNTO" + fedoraModel + ".txt");
+        fileService.toOutputFile(addDNNTT, "IO/493/addDNNTT" + fedoraModel + ".txt");
+        fileService.toOutputFile(forReindex, "IO/493/forReindex" + fedoraModel + ".txt");
+    }
+
+    private void compareLics(List<String> SDNNTlics, String MZKlics, String uuid, int datum_begin){
+        List<String> MZKlicenses = new ArrayList<>();
+        if (!Objects.equals(MZKlics, "null"))
+            MZKlicenses = makeList(MZKlics);
+
+        if (SDNNTlics.isEmpty()){
+            if (!MZKlicenses.isEmpty()){ //MZK got license and SDNNT not --> remove MZK license
+                LOG.add("No SDNNT license for MZK licensed doc: " + uuid + " with MZK license: " + MZKlicenses);
+                if (MZKlicenses.contains("dnnto")){
+                    if (datum_begin == 9999)
+                        forReindex.add(uuid);
+                    removeDNNTO.add(uuid);
+                }
+                if (MZKlicenses.contains("dnntt")){
+                    if (datum_begin == 9999)
+                        forReindex.add(uuid);
+                    removeDNNTT.add(uuid);
+                }
+            }
+
+        } else {
+            for (String lic : SDNNTlics){
+                if (!MZKlicenses.contains(lic)){//SDNNT got license and MZK not --> add MZK license
+                    LOG.add("No MZK license " + lic + ", which was found in SDNNT licenses for " + uuid);
+                    if (lic.equals("dnnto")){
+                        if (datum_begin == 9999)
+                            forReindex.add(uuid);
+                        addDNNTO.add(uuid);
+                    }
+                    if (lic.equals("dnntt")){
+                        if (datum_begin == 9999)
+                            forReindex.add(uuid);
+                        addDNNTT.add(uuid);
+                    }
+                }
+            }
+        }
+    }
+
+    private List<String> makeList(String strToList){
+        List<String> result = new ArrayList<>();
+        if (!strToList.contains(" ")){ //strToList is one item
+            String modifiedStr = strToList.replace("\n", "");
+            result.add(modifiedStr);
+        }
+
+        else {
+            String modifiedStr = strToList.replace("[", "");
+            modifiedStr = modifiedStr.replace("]", "");
+            modifiedStr = modifiedStr.replace(" ", "");
+            modifiedStr = modifiedStr.replace("\n", "");
+            result = new ArrayList<String>(Arrays.asList(modifiedStr.split(",")));
+        }
+        return result;
+    }
+
+
+    //response is SDNNT response
+    //pid is from SOLR
+    // its rly basic check
+    private boolean isSdnntFoundDocSame(String response, String pid){
+        if (response.contains(pid)) // SDNNT response contains SOLR pid
+            return true;
+        else {
+            String solrDocName = solrConn.getSolrParameterByPid(pid, "root_title"); //periodical volume can contain an empty title
+            if (response.contains(solrDocName))
+                return true;
+            else{
+                LOG.add("Documents does NOT match");
+                return false;
+            }
         }
     }
 
@@ -128,11 +205,11 @@ public class checkYearOfPublication implements Script {
         boolean docFound = false;
         //check for uuid in SDNNT
         if (sdnntConnNEW.isDocumentFound()){
-            results.append("UUID found in SDNNT! ").append(pid).append("\n");
+            LOG.add("UUID found in SDNNT!");
             docFound = true;
         }
         else {
-            results.append("UUID NOT found in SDNNT! ").append(pid).append("\n");
+            LOG.add("UUID NOT found in SDNNT! ");
 
             String cnb = getNewIdentifierFromSolr(pid, "cnb"); //this logs info about finding CNB in solr
             assert (cnb != null);
@@ -140,20 +217,32 @@ public class checkYearOfPublication implements Script {
                 sdnntConnNEW = new SdnntConnNEW(sdnntHost, "?query=" + cnb);
                 //check for cnb in SDNNT
                 if (sdnntConnNEW.isDocumentFound()){
-                    results.append("CNB found in SDNNT! ").append(cnb).append("\n");
+                    LOG.add("CNB found in SDNNT! " + cnb);
                     docFound = true;
                 }
-                else {
-                    results.append("CNB NOT found in SDNNT! ").append(cnb).append("\n");
+                else { //cnb not found in SDNNT, try issn
+                    LOG.add("CNB NOT found in SDNNT! " + cnb);
                     String issn = getNewIdentifierFromSolr(pid, "issn"); //this logs info about finding ISSN in solr
                     assert (issn != null);
                     if (isIssnNotEmptyInSolr(issn)){
                         sdnntConnNEW = new SdnntConnNEW(sdnntHost, "?query=" + issn);
                         //check for issn in SDNNT
                         if (sdnntConnNEW.isDocumentFound()){
-                            results.append("ISSN found in SDNNT! ").append(issn);
+                            LOG.add("ISSN found in SDNNT! " + issn);
                             docFound = true;
                         }
+                    }
+                }
+            }
+            else { // cnb not found in solr, try issn
+                String issn = getNewIdentifierFromSolr(pid, "issn"); //this logs info about finding ISSN in solr
+                assert (issn != null);
+                if (isIssnNotEmptyInSolr(issn)){
+                    sdnntConnNEW = new SdnntConnNEW(sdnntHost, "?query=" + issn);
+                    //check for issn in SDNNT
+                    if (sdnntConnNEW.isDocumentFound()){
+                        LOG.add("ISSN found in SDNNT! " + issn);
+                        docFound = true;
                     }
                 }
             }
@@ -177,17 +266,17 @@ public class checkYearOfPublication implements Script {
             String IDs = solrConn.getSolrParameterByPid(pid, "dc.identifier");
             String cnb = parseCnb(IDs);
             if (cnb.equals("CNB NOT found"))
-                results.append("SOLR CNB NOT found! ").append("\n");
+                LOG.add("SOLR CNB NOT found!");
             else
-                results.append("SOLR CNB found! ").append(cnb).append("\n");
+                LOG.add("SOLR CNB found! " + cnb);
             return cnb;
         }
         else if (identifier.equals("issn")){
             String issn = solrConn.getSolrParameterByPid(pid, "issn");
             if (issn.equals("\n"))
-                results.append("SOLR ISSN EMPTY! ").append("\n");
+                LOG.add("SOLR ISSN EMPTY! ");
             else
-                results.append("SOLR ISSN found! ").append(issn);
+                LOG.add("SOLR ISSN found! " + issn);
             return issn;
         }
         else
@@ -209,7 +298,7 @@ public class checkYearOfPublication implements Script {
             objIndex += separatorBegin.length();
         String result = IDs.substring(objIndex);
         result = result.split(separatorEnd)[0];
-        result = result.replaceAll("\\s+",""); //remove all whitespaces
+        result = result.replaceAll("\\s+",""); //try to remove all whitespaces
         if (result.charAt(0) != 'c'){
             StringBuilder sb = new StringBuilder();
             boolean cnbStartFound = false;
@@ -223,97 +312,6 @@ public class checkYearOfPublication implements Script {
         }
         return result;
     }
-
-    /*
-
-    //expecting data in DNNT lists
-    private void checkPidsInSDNNT(String sdnntHost, boolean checkDNNTT, String doctype){
-        //SdnntConnNEW sdnntConnectionNEW = new SdnntConnNEW("https://195.113.133.53/sdnnt/api/v1.0/catalog?query=uuid:df939db0-c44f-11e2-8b87-005056827e51");
-        List<String> dnntoNotFound = new ArrayList<>();
-        List<String> shouldBeDnntt = new ArrayList<>();
-
-        for (String uuid : DNNTO){
-            SdnntConnNEW sdnntConnectionNEW = new SdnntConnNEW(sdnntHost + "?query=" + uuid);
-            List<String> licences = sdnntConnectionNEW.getSdnntLicences();
-            if (!licences.contains("dnnto"))
-                dnntoNotFound.add(uuid);
-            else
-                results.append(uuid); //DEBUG
-            if (licences.contains("dnntt"))
-                shouldBeDnntt.add(uuid);
-            else
-                results.append(uuid); //DEBUG
-        }
-
-        LOG.add(doctype + "MZK dnnto NOT in SDNNT");
-        LOG.addAll(dnntoNotFound);
-
-        LOG.add(doctype + "MZK dnnto, whose are dnntt in SDNNT");
-        LOG.addAll(shouldBeDnntt);
-
-        List<String> dnnttNotFound = new ArrayList<>();
-        List<String> shouldBeDnnto = new ArrayList<>();
-
-        if (checkDNNTT){
-            for (String uuid : DNNTT){
-                SdnntConnNEW sdnntConnectionNEW = new SdnntConnNEW(sdnntHost + "?query=" + uuid);
-                List<String> licences = sdnntConnectionNEW.getSdnntLicences();
-                if (!licences.contains("dnntt"))
-                    dnnttNotFound.add(uuid);
-                else
-                    results.append(uuid); //DEBUG
-                if (licences.contains("dnnto"))
-                    shouldBeDnnto.add(uuid);
-                else
-                    results.append(uuid); //DEBUG
-            }
-
-            LOG.add(doctype + "MZK dnntt NOT in SDNNT");
-            LOG.addAll(dnnttNotFound);
-
-            LOG.add(doctype + "MZK dnntt, whose are dnnto in SDNNT");
-            LOG.addAll(shouldBeDnnto);
-        }
-
-        //for (String uuid : COVID){
-        //    SdnntConnNEW sdnntConnectionNEW = new SdnntConnNEW(sdnntHost + "?query=" + uuid);
-        //    List<String> licences = sdnntConnectionNEW.getSdnntLicences();
-        //    if (!licences.contains("covid"))
-        //        LOG.add(uuid + " is NOT covid in SDNNT");
-        //}
-    }
-
-
-
-    // gets dnnt documents from SOLR, dnnt documents are stored in DNNTO, DNNTT, COVID lists
-    private void getDnntDocuments(String queryPrefix){
-        DNNTO.clear();
-        DNNTT.clear();
-        COVID.clear();
-
-        DNNTO = solrConn.getPids(queryPrefix + " AND dnnt-labels:dnnto");
-        DNNTT = solrConn.getPids(queryPrefix + " AND dnnt-labels:dnntt");
-        COVID = solrConn.getPids(queryPrefix + " AND dnnt-labels:covid");
-
-        results.append("DNNTO: ").append(DNNTO.size()).append("\n");
-        results.append("DNNTT: ").append(DNNTT.size()).append("\n");
-        results.append("COVID: ").append(COVID.size()).append("\n");
-    }
-
-    private void logDocsForReindex(){
-        for (String line : LOG){
-            if (line.startsWith("uuid:")){
-                String datum = solrConn.getSolrParameterByPid(line, "datum_begin");
-                if (datum.equals("9999"))
-                    forReindex.add(line);
-            }
-        }
-        fileService.toOutputFile(forReindex, "IO/493/forReindex.txt");
-    }
-
-
-    */
-
 }
 
 
@@ -348,6 +346,11 @@ public class checkYearOfPublication implements Script {
     poznamka: granularity pravdepodobne znamena, ze jsou v dokumentu rocniky s ruznymi licencemi - OVERIT!
     poznamka: po porade s Romanem si vypisu i ty dokumenty, kde by se mel zrusit covid, alespon do souboru
                 a pripadne je zacnu menit
+
+
+    TODO PRIPADNE PRIDAT KONTROLU PODLE ISBN - a mozna taky ne, kdyz na miste issn dane isbn
+    TODO pridat kontrolu podle nazvu
+
  */
 
 

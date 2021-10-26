@@ -19,7 +19,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        final String scriptName = "checkYearOfPublication";
+        final String scriptName = "Whatever";
         Script script = null;
 
         switch (scriptName){
@@ -69,6 +69,10 @@ public class Main {
             }
             case "Whatever": {
                 script = new Whatever();
+                break;
+            }
+            case "DistributionToExcelSheets": {
+                script = new DistributionToExcelSheets();
                 break;
             }
             default:{

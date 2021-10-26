@@ -11,9 +11,14 @@ import org.yaml.snakeyaml.events.Event;
     Author: Marek Sedlo
     Description:
     Script for issue 493
+    Pred spustenim skriptu je treba mit spravny vstup, protoze program nezvlada velke mnozstvi dokumentu
+    Ziskani spravneho vstupu: staci zmenit makeingInput na true (DEBUG musi byt false)
+    Spousteni programu: program je treba spoustet po castech
+                        ve funkci start jsou preddefinovane zakomentovane bloky, spoustet by se mel vzdy jen jeden blok (spousteni vice bloku funguje, ale jen v pripade maleho poctu dokumentu)
 */
 
 public class checkYearOfPublication implements Script {
+    private static final boolean makeingInput = false;
     public static final boolean DEBUG = false;
     private List<String> LOG = new ArrayList<>();
     private List<String> removeDNNTO = new ArrayList<>();
@@ -27,59 +32,138 @@ public class checkYearOfPublication implements Script {
 
     @Override
     public void start(Properties prop) {
-        HashMap<String, Integer> pers = new HashMap<>();
-        HashMap<String, Integer> perVols = new HashMap<>();
-        HashMap<String, Integer> mons2008 = new HashMap<>();
-        HashMap<String, Integer> monUnits2008 = new HashMap<>();
-        HashMap<String, Integer> mons2001 = new HashMap<>();
-        HashMap<String, Integer> monUnits2001 = new HashMap<>();
-
-        final String sdnntHost = prop.getProperty("SDNNT_HOST_PRIVATE_PART_API_CATALOG");
-
-
         //Periodika 2011+ nemaji mit zadny dnnt label, musi byt v soulasu se SDNNT
         String periodicalFrom2011 = "fedora.model:periodical AND datum_begin:[2011 TO *]"; //841
         String periodicalvolumeFrom2011 = "fedora.model:periodicalvolume AND datum_begin:[2011 TO *]"; //1920
         //Monografie 2008+ nemaji mit dnnt-t --> nemaji mit zadny dnnt label, musi byt v souladu se SDNNT
         String monographFrom2008 = "fedora.model:monograph AND datum_begin:[2008 TO *]"; //35007
         String monographunitFrom2008 = "fedora.model:monographunit AND datum_begin:[2008 TO *]"; //1154
-        //Monografie 2001+ nemaji mit dnnt-o, musi byt v soulasu se SDNNT
-        String monographFrom2001 = "fedora.model:monograph AND datum_begin:[2001 TO *]"; //75498
-        String monographunitFrom2001 = "fedora.model:monographunit AND datum_begin:[2001 TO *]"; //2087
+        //Monografie 2001+ nemaji mit dnnt-o, musi byt v souladu se SDNNT
+        //String monographFrom2001 = "fedora.model:monograph AND datum_begin:[2001 TO *]"; //75498
+        String monographFrom2001 = "fedora.model:monograph AND datum_begin:[2001 TO 2007]"; //40491
+        //String monographunitFrom2001 = "fedora.model:monographunit AND datum_begin:[2001 TO *]"; //2087
+        String monographunitFrom2001 = "fedora.model:monographunit AND datum_begin:[2001 TO 2007]"; //933
 
-        if (!DEBUG){
-            pers = getSolrDocuments(periodicalFrom2011);
-            perVols = getSolrDocuments(periodicalvolumeFrom2011);
-            mons2008 = getSolrDocuments(monographFrom2008);
-            monUnits2008 = getSolrDocuments(monographunitFrom2008);
-            mons2001 = getSolrDocuments(monographFrom2001);
-            monUnits2001 = getSolrDocuments(monographunitFrom2001);
+
+        if (makeingInput){
+            //getSolrDocuments(periodicalFrom2011, "2011per");
+            //getSolrDocuments(periodicalvolumeFrom2011, "2011perVol");
+            //getSolrDocuments(monographFrom2008, "2008mon");
+            //getSolrDocuments(monographunitFrom2008, "2008monUnit");
+            getSolrDocuments(monographFrom2001, "2001mon");
+            getSolrDocuments(monographunitFrom2001, "2001monUnit");
         }
+        else {
+            final String sdnntHost = prop.getProperty("SDNNT_HOST_PRIVATE_PART_API_CATALOG");
+            HashMap<String, Integer> pers = new HashMap<>();
+            HashMap<String, Integer> perVols = new HashMap<>();
+            HashMap<String, Integer> mons2008 = new HashMap<>();
+            HashMap<String, Integer> monUnits2008 = new HashMap<>();
+            HashMap<String, Integer> mons2001 = new HashMap<>();
+            HashMap<String, Integer> monUnits2001 = new HashMap<>();
 
-        if (DEBUG){
-            pers.put("uuid:f41ba5e1-4bfc-11e1-8bb9-005056a60003", 2003);
-            pers.put("uuid:51596ad0-68a3-11e4-8d66-5ef3fc9bb22f", 2003);
-            pers.put("uuid:94cd1ef0-0b88-11ea-9e5a-5ef3fc9bb22f", 2012);
-            pers.put("uuid:169c1730-3d6f-11e4-bdb5-005056825209", 9999);
-            pers.put("uuid:0557fa00-f23f-11e3-97c9-001018b5eb5c", 9999);
-            perVols.put("uuid:69016ad0-5eba-11ea-a5e6-005056825209", 2018);
+            if (DEBUG){
+                pers.put("uuid:f41ba5e1-4bfc-11e1-8bb9-005056a60003", 2003);
+                pers.put("uuid:51596ad0-68a3-11e4-8d66-5ef3fc9bb22f", 2003);
+                pers.put("uuid:94cd1ef0-0b88-11ea-9e5a-5ef3fc9bb22f", 2012);
+                pers.put("uuid:169c1730-3d6f-11e4-bdb5-005056825209", 9999);
+                pers.put("uuid:0557fa00-f23f-11e3-97c9-001018b5eb5c", 9999);
+                perVols.put("uuid:69016ad0-5eba-11ea-a5e6-005056825209", 2018);
+                perVols.put("uuid:8cab0875-b8b7-4771-9014-c9afae9e306f", 2014);
+            }
+
+            if (!DEBUG){ //PREDDEFINOVANE BLOKY, Peclive zkontroluj nazvy, predpoklada se vstup v souboru IO/493/parts
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2011perLAST"); //read from made input
+                pers = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, pers, "periodical");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2011perVolLAST"); //read from made input
+                perVols = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, perVols, "periodicalvolume");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008mon10000"); //read from made input
+                mons2008 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2008, "monograph");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008mon20000"); //read from made input
+                mons2008 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2008, "monograph");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008mon30000"); //read from made input
+                mons2008 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2008, "monograph");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008monLAST"); //read from made input
+                mons2008 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2008, "monograph");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008monUnitLAST"); //read from made input //TODO tohle uz jsem probehl a dal jsem to delat, je treba to jeste zkontrolovat
+                monUnits2008 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, monUnits2008, "monographunit");*/
+
+                List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001mon10000"); //read from made input //TODO spustit znovu, pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                mons2001 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2001, "monograph");
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001mon20000"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                mons2001 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2001, "monograph");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001mon30000"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                mons2001 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2001, "monograph");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001mon40000"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                mons2001 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2001, "monograph");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001monLAST"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                mons2001 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, mons2001, "monograph");*/
+
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001monUnitLAST"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                monUnits2001 = makeHashMap(inputPids);
+                inputPids.clear();
+                compareSDNNTlicences(sdnntHost, monUnits2001, "monographunit");*/
+            }
+            fileService.toOutputFile(LOG, "IO/493/LOG");
         }
-
-        compareSDNNTlicences(sdnntHost, pers, "periodical");
-        compareSDNNTlicences(sdnntHost, perVols, "periodicalvolume");
-        compareSDNNTlicences(sdnntHost, mons2008, "monograph");
-        compareSDNNTlicences(sdnntHost, monUnits2008, "monographunit");
-        compareSDNNTlicences(sdnntHost, mons2001, "monograph");
-        compareSDNNTlicences(sdnntHost, monUnits2001, "monographunit");
-
-
-        fileService.toOutputFile(LOG, "IO/493/LOG");
     }
 
-    private HashMap<String, Integer> getSolrDocuments(String solrQuery){
-        HashMap<String, Integer> result = new HashMap<>();
+    private void getSolrDocuments(String solrQuery, String doctype){
         List<String> pids = solrConn.getPids(solrQuery);
+        List<String> parts = new ArrayList<>();
 
+        if (pids.size() < 10000)
+            fileService.toOutputFile(pids, "IO/493/parts/part" + doctype + "LAST");
+        else {
+            int i = 0;
+            for (String pid : pids){
+                parts.add(pid);
+                if ((i>0) && ((i % 10000) == 0)){
+                    fileService.toOutputFile(parts, "IO/493/parts/part" + doctype + i);
+                    parts.clear();
+                }
+                i++;
+            }
+            fileService.toOutputFile(parts, "IO/493/parts/part" + doctype + "LAST");
+        }
+    }
+
+    private HashMap<String, Integer> makeHashMap(List<String> pids){
+        HashMap<String, Integer> result = new HashMap<>();
         for (String pid : pids){
             String datumBegin = solrConn.getSolrParameterByPid(pid, "datum_begin");
             datumBegin = datumBegin.replace("\n", "");
@@ -108,9 +192,9 @@ public class checkYearOfPublication implements Script {
                         //compare licences
                         List<String> SDNNTlicences = new ArrayList<>();
                         if (fedoraModel.equals("periodical") || fedoraModel.equals("monograph")) //it's root
-                            SDNNTlicences = sdnntConnNEW.getSdnntLicences(true);
+                            SDNNTlicences = sdnntConnNEW.getSdnntLicences(true, pid);
                         else //it's child
-                            SDNNTlicences = sdnntConnNEW.getSdnntLicences(false);
+                            SDNNTlicences = sdnntConnNEW.getSdnntLicences(false, pid);
                         String MZKlics = solrConn.getSolrParameterByPid(pid, "dnnt-labels");
                         compareLics(SDNNTlicences, MZKlics, pid, docsToCompare.get(pid));
                     }
@@ -142,7 +226,6 @@ public class checkYearOfPublication implements Script {
                     removeDNNTT.add(uuid);
                 }
             }
-
         } else {
             for (String lic : SDNNTlics){
                 if (!MZKlicenses.contains(lic)){//SDNNT got license and MZK not --> add MZK license

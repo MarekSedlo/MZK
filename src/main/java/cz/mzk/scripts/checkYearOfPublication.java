@@ -21,6 +21,7 @@ public class checkYearOfPublication implements Script {
     private static final boolean makeingInput = false;
     public static final boolean DEBUG = false;
     private List<String> LOG = new ArrayList<>();
+    private List<String> anomaly = new ArrayList<>();
     private List<String> removeDNNTO = new ArrayList<>();
     private List<String> removeDNNTT = new ArrayList<>();
     private List<String> addDNNTO = new ArrayList<>();
@@ -103,15 +104,15 @@ public class checkYearOfPublication implements Script {
                 inputPids.clear();
                 compareSDNNTlicences(sdnntHost, mons2008, "monograph");*/
 
-                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008monUnitLAST"); //read from made input //TODO tohle uz jsem probehl a dal jsem to delat, je treba to jeste zkontrolovat
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008monUnitLAST"); //read from made input
                 monUnits2008 = makeHashMap(inputPids);
                 inputPids.clear();
                 compareSDNNTlicences(sdnntHost, monUnits2008, "monographunit");*/
 
-                List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001mon10000"); //read from made input //TODO spustit znovu, pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001mon10000"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
                 mons2001 = makeHashMap(inputPids);
                 inputPids.clear();
-                compareSDNNTlicences(sdnntHost, mons2001, "monograph");
+                compareSDNNTlicences(sdnntHost, mons2001, "monograph");*/
 
                 /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001mon20000"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
                 mons2001 = makeHashMap(inputPids);
@@ -133,12 +134,13 @@ public class checkYearOfPublication implements Script {
                 inputPids.clear();
                 compareSDNNTlicences(sdnntHost, mons2001, "monograph");*/
 
-                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001monUnitLAST"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001monUnitLAST"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
                 monUnits2001 = makeHashMap(inputPids);
                 inputPids.clear();
-                compareSDNNTlicences(sdnntHost, monUnits2001, "monographunit");*/
+                compareSDNNTlicences(sdnntHost, monUnits2001, "monographunit");
             }
             fileService.toOutputFile(LOG, "IO/493/LOG");
+            fileService.toOutputFile(anomaly, "IO/493/anomaly");
         }
     }
 
@@ -184,8 +186,10 @@ public class checkYearOfPublication implements Script {
             LOG.add("CHECKING UUID: " + pid);
             SdnntConnNEW sdnntConnNEW = findDocInSDNNT(sdnntHost, pid);
             if (sdnntConnNEW != null) //document found in SDNNT
-                if (sdnntConnNEW.getDocsFound() > 1)
+                if (sdnntConnNEW.getDocsFound() > 1) { //do not compare licences in this situation
                     LOG.add("SDNNT response has multiple docs found for this doc: " + pid);
+                    anomaly.add(pid);
+                }
                 else {
                     if (isSdnntFoundDocSame(sdnntConnNEW.getJsonResponse(), pid)){
                         LOG.add("Documents matches!");
@@ -275,6 +279,7 @@ public class checkYearOfPublication implements Script {
                 return true;
             else{
                 LOG.add("Documents does NOT match");
+                anomaly.add(pid);
                 return false;
             }
         }
@@ -314,6 +319,8 @@ public class checkYearOfPublication implements Script {
                             LOG.add("ISSN found in SDNNT! " + issn);
                             docFound = true;
                         }
+                        else
+                            LOG.add("ISSN NOT found in SDNNT! " + issn);
                     }
                 }
             }
@@ -327,6 +334,8 @@ public class checkYearOfPublication implements Script {
                         LOG.add("ISSN found in SDNNT! " + issn);
                         docFound = true;
                     }
+                    else
+                        LOG.add("ISSN NOT found in SDNNT! " + issn);
                 }
             }
         }

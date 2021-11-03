@@ -70,17 +70,52 @@ public class SdnntConnNEW {
         return null;
     }
 
-    public List<String> getSdnntLicences(){
+    //expecting data in jsonResponse
+    public List<String> getSdnntLicences(boolean isRoot, String pid){
         JSONObject jsonObj = new JSONObject(jsonResponse);
         JSONArray docs = jsonObj.getJSONArray("docs");
         JSONArray licences = null;
         ArrayList<String> jsonArrToList = new ArrayList<String>();
 
         for (int i = 0; i<docs.length(); i++){
-            if (docs.getJSONObject(i).has("license")) //licenses found in JSON
-                licences = docs.getJSONObject(i).getJSONArray("license");
-            else
-                return jsonArrToList;
+            if (isRoot){
+                if (docs.getJSONObject(i).has("license")) //licenses found in JSON
+                    licences = docs.getJSONObject(i).getJSONArray("license");
+                else
+                    return jsonArrToList; //empty
+            }
+            else {
+                if (docs.getJSONObject(i).has("granularity")){
+                    JSONArray granularity = docs.getJSONObject(i).getJSONArray("granularity");
+                    for (int j = 0; j<granularity.length(); j++){
+                        if (granularity.getJSONObject(j).has("link")){
+                            String link = granularity.getJSONObject(j).getString("link");
+                            if (link.contains(pid)){
+                                if (granularity.getJSONObject(j).has("license")){
+                                    jsonArrToList.add(granularity.getJSONObject(j).getString("license"));
+                                    return jsonArrToList; //child licence
+                                }
+                                else
+                                    return jsonArrToList; //empty
+                            }
+                        }
+                    }
+                }
+                else if (docs.getJSONObject(i).has("pids")){ // nema granularity, tak se podivam do pids, ktere maji mit stejny label jako root
+                    JSONArray sdnntPids = docs.getJSONObject(i).getJSONArray("pids");
+                    for (int p = 0; p < sdnntPids.length(); p++){
+                        String sdnntChildPid = sdnntPids.getString(p);
+                        if (sdnntChildPid.contains(pid)){ //get root
+                            if (docs.getJSONObject(i).has("license")) //licenses found in JSON
+                                licences = docs.getJSONObject(i).getJSONArray("license");
+                            else
+                                return jsonArrToList; //empty
+                        }
+                    }
+                }
+                else
+                    return jsonArrToList; //empty
+            }
         }
 
         if (licences != null) {
@@ -102,6 +137,12 @@ public class SdnntConnNEW {
         JSONArray docs = jsonObj.getJSONArray("docs");
         int docsLength = docs.length();
 
-        return (numFound != 0) || (docsLength != 0);
+        return (numFound != 0) || (docsLength != 0); //return true if numFound != 0 and docsLength != 0
+    }
+
+    //return number of found documents
+    public int getDocsFound(){
+        JSONObject jsonObj = new JSONObject(jsonResponse);
+        return jsonObj.getInt("numFound");
     }
 }

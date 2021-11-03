@@ -59,8 +59,10 @@ public class SolrUtils {
 
     // this function returns list of uuids by given query parameter
     // query parameter is the same string like in solr web GUI
+    //
 
     public List<String> getPids(String q){
+        int maximumPids = 1600000;
         List<String> allPids = new ArrayList<>();
         final int maxBatchSize = 50000;
         int start = 0;
@@ -72,6 +74,8 @@ public class SolrUtils {
             batchPids.clear();
             batchPids = getPidsBatch(q, start, maxBatchSize);
             allPids.addAll(batchPids);
+            if (allPids.size() >= maximumPids)
+                break;
         }
         return allPids;
     }

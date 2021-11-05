@@ -13,9 +13,10 @@ import java.util.Properties;
 public class Whatever implements Script {
     FileIO fileIO = new FileIO();
     SolrUtils solrUtils = new SolrUtils();
+    private final boolean DEBUG = true;
     /*Connection con = new Connection();
     XMLparser parser = new XMLparser();
-    private final boolean DEBUG = true;
+
     private StringBuilder debugOutput = new StringBuilder();
     private int list4Pages = 0;
     private int list5Pages = 0;*/
@@ -40,7 +41,7 @@ public class Whatever implements Script {
 
     public void start(Properties prop) {
         //vytahovani dat pro issue#456 - zrusit covid label
-        List<String> covidPids = solrUtils.getPids("dnnt-labels:covid");
+        List<String> covidPids = solrUtils.getPids("dnnt-labels:covid", 1600000, DEBUG);
         fileIO.toOutputFile(covidPids, "IO/456/covidPids.txt");
 
 

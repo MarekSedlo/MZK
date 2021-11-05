@@ -19,7 +19,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        final String scriptName = "Whatever";
+        final String scriptName = "updatePrivacyRegularly";
         Script script = null;
 
         switch (scriptName){

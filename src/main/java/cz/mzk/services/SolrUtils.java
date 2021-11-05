@@ -61,8 +61,8 @@ public class SolrUtils {
     // query parameter is the same string like in solr web GUI
     //
 
-    public List<String> getPids(String q){
-        int maximumPids = 1600000;
+    public List<String> getPids(String q, int maxPids, boolean DEBUG){
+        //int maximumPids = 1600000;
         List<String> allPids = new ArrayList<>();
         final int maxBatchSize = 50000;
         int start = 0;
@@ -74,9 +74,17 @@ public class SolrUtils {
             batchPids.clear();
             batchPids = getPidsBatch(q, start, maxBatchSize);
             allPids.addAll(batchPids);
-            if (allPids.size() >= maximumPids)
+
+            if (DEBUG)
+                System.out.println(start + " done, Maximum pids: " + maxPids);
+
+            if (allPids.size() >= maxPids)
                 break;
         }
+
+        if (DEBUG)
+            System.out.println(allPids.size() + " done, Maximum pids: " + maxPids);
+
         return allPids;
     }
 

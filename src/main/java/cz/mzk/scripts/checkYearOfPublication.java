@@ -47,10 +47,10 @@ public class checkYearOfPublication implements Script {
 
 
         if (makeingInput){
-            //getSolrDocuments(periodicalFrom2011, "2011per");
-            //getSolrDocuments(periodicalvolumeFrom2011, "2011perVol");
-            //getSolrDocuments(monographFrom2008, "2008mon");
-            //getSolrDocuments(monographunitFrom2008, "2008monUnit");
+            getSolrDocuments(periodicalFrom2011, "2011per");
+            getSolrDocuments(periodicalvolumeFrom2011, "2011perVol");
+            getSolrDocuments(monographFrom2008, "2008mon");
+            getSolrDocuments(monographunitFrom2008, "2008monUnit");
             getSolrDocuments(monographFrom2001, "2001mon");
             getSolrDocuments(monographunitFrom2001, "2001monUnit");
         }
@@ -79,10 +79,10 @@ public class checkYearOfPublication implements Script {
                 inputPids.clear();
                 compareSDNNTlicences(sdnntHost, pers, "periodical");*/
 
-                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2011perVolLAST"); //read from made input
+                List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2011perVolLAST"); //read from made input
                 perVols = makeHashMap(inputPids);
                 inputPids.clear();
-                compareSDNNTlicences(sdnntHost, perVols, "periodicalvolume");*/
+                compareSDNNTlicences(sdnntHost, perVols, "periodicalvolume");
 
                 /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008mon10000"); //read from made input
                 mons2008 = makeHashMap(inputPids);
@@ -134,10 +134,10 @@ public class checkYearOfPublication implements Script {
                 inputPids.clear();
                 compareSDNNTlicences(sdnntHost, mons2001, "monograph");*/
 
-                List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001monUnitLAST"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2001monUnitLAST"); //read from made input //TODO pozor pro rok 2001-2007 nechci mazat dnnt-t label
                 monUnits2001 = makeHashMap(inputPids);
                 inputPids.clear();
-                compareSDNNTlicences(sdnntHost, monUnits2001, "monographunit");
+                compareSDNNTlicences(sdnntHost, monUnits2001, "monographunit");*/
             }
             fileService.toOutputFile(LOG, "IO/493/LOG");
             fileService.toOutputFile(anomaly, "IO/493/anomaly");
@@ -145,7 +145,7 @@ public class checkYearOfPublication implements Script {
     }
 
     private void getSolrDocuments(String solrQuery, String doctype){
-        List<String> pids = solrConn.getPids(solrQuery);
+        List<String> pids = solrConn.getPids(solrQuery, 1000000, DEBUG);
         List<String> parts = new ArrayList<>();
 
         if (pids.size() < 10000)

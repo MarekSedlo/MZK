@@ -167,8 +167,8 @@ public class checkYearOfPublication implements Script {
     private HashMap<String, Integer> makeHashMap(List<String> pids){
         HashMap<String, Integer> result = new HashMap<>();
         for (String pid : pids){
-            String datumBegin = solrConn.getSolrParameterByPid(pid, "datum_begin");
-            datumBegin = datumBegin.replace("\n", "");
+            String datumBegin = solrConn.getSolrParameterByPid(pid, "datum_begin", false);
+            //datumBegin = datumBegin.replace("\n", "");
             result.put(pid, Integer.parseInt(datumBegin));
         }
         return result;
@@ -199,7 +199,7 @@ public class checkYearOfPublication implements Script {
                             SDNNTlicences = sdnntConnNEW.getSdnntLicences(true, pid);
                         else //it's child
                             SDNNTlicences = sdnntConnNEW.getSdnntLicences(false, pid);
-                        String MZKlics = solrConn.getSolrParameterByPid(pid, "dnnt-labels");
+                        String MZKlics = solrConn.getSolrParameterByPid(pid, "dnnt-labels", true);
                         compareLics(SDNNTlicences, MZKlics, pid, docsToCompare.get(pid));
                     }
                 }
@@ -274,7 +274,7 @@ public class checkYearOfPublication implements Script {
         if (response.contains(pid)) // SDNNT response contains SOLR pid
             return true;
         else {
-            String solrDocName = solrConn.getSolrParameterByPid(pid, "root_title"); //periodical volume can contain an empty title
+            String solrDocName = solrConn.getSolrParameterByPid(pid, "root_title", true); //periodical volume can contain an empty title
             if (response.contains(solrDocName))
                 return true;
             else{
@@ -355,7 +355,7 @@ public class checkYearOfPublication implements Script {
 
     private String getNewIdentifierFromSolr(String pid, String identifier){
         if (identifier.equals("cnb")){
-            String IDs = solrConn.getSolrParameterByPid(pid, "dc.identifier");
+            String IDs = solrConn.getSolrParameterByPid(pid, "dc.identifier", true);
             String cnb = parseCnb(IDs);
             if (cnb.equals("CNB NOT found"))
                 LOG.add("SOLR CNB NOT found!");
@@ -364,7 +364,7 @@ public class checkYearOfPublication implements Script {
             return cnb;
         }
         else if (identifier.equals("issn")){
-            String issn = solrConn.getSolrParameterByPid(pid, "issn");
+            String issn = solrConn.getSolrParameterByPid(pid, "issn", true);
             if (issn.equals("\n"))
                 LOG.add("SOLR ISSN EMPTY! ");
             else

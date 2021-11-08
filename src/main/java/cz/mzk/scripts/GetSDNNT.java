@@ -61,7 +61,7 @@ public class GetSDNNT implements Script{
 
     private String getCnb(String pid){
         SolrUtils solrConn = new SolrUtils();
-        String identifiers = solrConn.getSolrParameterByPid(pid, "dc.identifier");
+        String identifiers = solrConn.getSolrParameterByPid(pid, "dc.identifier", true);
         String cnb = parseIdentifiers(identifiers);
         return cnb;
     }

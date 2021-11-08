@@ -19,7 +19,7 @@ public class Main {
             e.printStackTrace();
         }
 
-        final String scriptName = "updatePrivacyRegularly";
+        final String scriptName = "checkYearOfPublication";
         Script script = null;
 
         switch (scriptName){

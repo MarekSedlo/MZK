@@ -31,7 +31,7 @@ public class SolrUtils {
     }
 
     //this function adds newline right after the parameter
-    public String getSolrParameterByPid(String pid, String parameter){
+    public String getSolrParameterByPid(String pid, String parameter, boolean addNewlineForEachResult){
         StringBuilder result = new StringBuilder();
         SolrQuery query = new SolrQuery();
         String uuid = pid;
@@ -48,8 +48,11 @@ public class SolrUtils {
             SolrDocumentList docList = response.getResults();
             for (org.apache.solr.common.SolrDocument entries : docList) {
                 result.append(entries.getFieldValue(parameter));
-                if (entries.getFieldValue(parameter) != null)
-                    result.append("\n");
+                if (entries.getFieldValue(parameter) != null){
+                    if (addNewlineForEachResult)
+                        result.append("\n");
+                }
+
             }
         } catch (Exception e){
             e.printStackTrace();

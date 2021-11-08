@@ -41,7 +41,7 @@ public class Whatever implements Script {
 
     public void start(Properties prop) {
         //vytahovani dat pro issue#456 - zrusit covid label
-        List<String> covidPids = solrUtils.getPids("dnnt-labels:covid", 1600000, DEBUG);
+        List<String> covidPids = solrUtils.getPids("dnnt-labels:covid", 200000, DEBUG);
         fileIO.toOutputFile(covidPids, "IO/456/covidPids.txt");
 
 

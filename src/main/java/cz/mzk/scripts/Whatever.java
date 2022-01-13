@@ -1,74 +1,81 @@
 package cz.mzk.scripts;
 
-import cz.mzk.services.Connection;
+import cz.mzk.KrameriusVersion;
 import cz.mzk.services.FileIO;
+import cz.mzk.services.SolrProcessing;
 import cz.mzk.services.SolrUtils;
-import cz.mzk.services.XMLparser;
 
-import java.net.HttpURLConnection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 public class Whatever implements Script {
     FileIO fileIO = new FileIO();
-    SolrUtils solrUtils = new SolrUtils();
+    SolrUtils solrUtils = new SolrUtils(KrameriusVersion.K5);
     private final boolean DEBUG = true;
-    /*Connection con = new Connection();
-    XMLparser parser = new XMLparser();
-
-    private StringBuilder debugOutput = new StringBuilder();
-    private int list4Pages = 0;
-    private int list5Pages = 0;*/
-
-    //issue Erika
-    /*private void getDeeper(String parentUuid, boolean isList4){
-        HttpURLConnection connection = con.getConnection("http://dk-fedora.infra.mzk.cz/fedora/objects/uuid:" + parentUuid + "/datastreams/RELS-EXT/content", DEBUG);
-        StringBuilder FOXML = con.read(connection);
-        List<String> childrenUuids = parser.getFOXMLChildrenUuids(FOXML);
-
-        if (childrenUuids.size() > 0){
-            for (String childUuid : childrenUuids){
-                getDeeper(childUuid, isList4);
-            }
-        } else { //tady je child
-            if (isList4)
-                list4Pages++;
-            else
-                list5Pages++;
-        }
-    }*/
 
     public void start(Properties prop) {
+        /*SolrUtils sUtilsTest = new SolrUtils(KrameriusVersion.K7);
+        String result = sUtilsTest.getSolrParameterByPid("uuid:b4944130-5f1c-11eb-9496-005056827e52", "date_range_start.year", false);
+        if (result.isEmpty())
+            System.out.println("empty");
+        else
+            System.out.println(result);*/
+
+
+
         //vytahovani dat pro issue#456 - zrusit covid label
         List<String> covidPids = solrUtils.getPids("dnnt-labels:covid", 200000, DEBUG);
         fileIO.toOutputFile(covidPids, "IO/456/covidPids.txt");
 
 
-        //issue Erika
-
-        /*List<String> list4 = fileIO.readFileLineByLine("IO/Erika/list4.txt");
-        List<String> list5 = fileIO.readFileLineByLine("IO/Erika/list5.txt");
-
-        String uuid = "";
-
-        for (String item : list4){
-            String[] parts = item.split("uuid:");
-            uuid = parts[1];
-            uuid = uuid.replaceAll("\\s+$", "");
-            getDeeper(uuid, true);
+        /*boolean allAreRoots = true;
+        List<String> inputPids = fileIO.readFileLineByLine("IO/527/input.txt");
+        for (String pid:inputPids){
+            String rootPid = solrUtils.getSolrParameterByPid(pid, "root_pid", false);
+            if (!pid.equals(rootPid))
+                allAreRoots = false;
         }
+        System.out.println("all are roots: " + allAreRoots);*/
+        //BYLO TRUE :-)
 
-        for (String item : list5){
-            String[] parts = item.split("uuid:");
-            uuid = parts[1];
-            uuid = uuid.replaceAll("\\s+$", "");
-            getDeeper(uuid, false);
+
+
+
+
+
+
+        //Kontrola co je issn a co isbn v poli solru "issn:"
+
+        /*List<String> inputPids = new ArrayList<>();
+        //inputPids = fileIO.readFileLineByLine("IO/issnCheck/input");
+        inputPids = solrUtils.getPids("fedora.model:monograph", 1000, true);
+        List<String> issns = new ArrayList<>();
+        int issnCount = 0;
+        int isbnCount = 0;
+        int emptyFieldCount = 0;
+
+        for (int i=0;i<inputPids.size();i++){
+            String issnSolrField = solrUtils.getSolrParameterByPid(inputPids.get(i), "issn", false);
+            issns.add(inputPids.get(i) + " issn: " +issnSolrField);
+            if (issnSolrField.length() > 9)
+                isbnCount++;
+            else if (issnSolrField.length() < 2)
+                emptyFieldCount++;
+            else
+                issnCount++;
         }
+        fileIO.toOutputFile(issns, "IO/issnCheck/output.txt");
+        System.out.println("isbn count:" + isbnCount + " issn count:" + issnCount + " empty fields count:" + emptyFieldCount);*/
 
-        debugOutput.append("Pocet stranek v listu 4: " + list4Pages + "\n");
-        debugOutput.append("Pocet stranek v listu 5: " + list5Pages);
-        System.out.println(debugOutput);*/
+
+
+
+
+
+
+
+
 
 
 

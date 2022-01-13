@@ -2,9 +2,11 @@ package cz.mzk.scripts;
 
 import java.util.*;
 
+import cz.mzk.KrameriusVersion;
 import cz.mzk.services.FileIO;
 import cz.mzk.services.SdnntConnNEW;
 import cz.mzk.services.SolrUtils;
+import org.apache.http.HttpStatus;
 import org.yaml.snakeyaml.events.Event;
 
 /*
@@ -12,7 +14,7 @@ import org.yaml.snakeyaml.events.Event;
     Description:
     Script for issue 493
     Pred spustenim skriptu je treba mit spravny vstup, protoze program nezvlada velke mnozstvi dokumentu
-    Ziskani spravneho vstupu: staci zmenit makeingInput na true (DEBUG musi byt false)
+    Ziskani spravneho vstupu: staci zmenit makingInput na true (DEBUG musi byt false)
     Spousteni programu: program je treba spoustet po castech
                         ve funkci start jsou preddefinovane zakomentovane bloky, spoustet by se mel vzdy jen jeden blok (spousteni vice bloku funguje, ale jen v pripade maleho poctu dokumentu)
 */
@@ -27,19 +29,19 @@ public class checkYearOfPublication implements Script {
     private List<String> addDNNTO = new ArrayList<>();
     private List<String> addDNNTT = new ArrayList<>();
     FileIO fileService = new FileIO();
-    SolrUtils solrConn = new SolrUtils();
+    SolrUtils solrConn = new SolrUtils(KrameriusVersion.K5);
     List<String> forReindex = new ArrayList<>();
 
 
     @Override
     public void start(Properties prop) {
-        //Periodika 2011+ nemaji mit zadny dnnt label, musi byt v soulasu se SDNNT
-        String periodicalFrom2011 = "fedora.model:periodical AND datum_begin:[2011 TO *]"; //841
-        String periodicalvolumeFrom2011 = "fedora.model:periodicalvolume AND datum_begin:[2011 TO *]"; //1920
-        //Monografie 2008+ nemaji mit dnnt-t --> nemaji mit zadny dnnt label, musi byt v souladu se SDNNT
-        String monographFrom2008 = "fedora.model:monograph AND datum_begin:[2008 TO *]"; //35007
-        String monographunitFrom2008 = "fedora.model:monographunit AND datum_begin:[2008 TO *]"; //1154
-        //Monografie 2001+ nemaji mit dnnt-o, musi byt v souladu se SDNNT
+        //Periodika 2011+ nemaji mit zadny dnnt label, musi byt v souladu se SDNNT
+        String periodicalFrom2011 = "fedora.model:periodical AND datum_begin:[2011 TO 2100]"; // TO * 841
+        String periodicalvolumeFrom2011 = "fedora.model:periodicalvolume AND datum_begin:[2011 TO 2100]"; // TO * 1920
+        //Monografie 2008+ nemaji mit zadny dnnt label, musi byt v souladu se SDNNT
+        String monographFrom2008 = "fedora.model:monograph AND datum_begin:[2008 TO 2100]"; // TO * 35007
+        String monographunitFrom2008 = "fedora.model:monographunit AND datum_begin:[2008 TO 2100]"; // TO * 1154
+        //Monografie 2001+ nemaji mit dnnt-o a mohou mit dnnt-t musi byt v souladu se SDNNT
         //String monographFrom2001 = "fedora.model:monograph AND datum_begin:[2001 TO *]"; //75498
         String monographFrom2001 = "fedora.model:monograph AND datum_begin:[2001 TO 2007]"; //40491
         //String monographunitFrom2001 = "fedora.model:monographunit AND datum_begin:[2001 TO *]"; //2087
@@ -64,13 +66,19 @@ public class checkYearOfPublication implements Script {
             HashMap<String, Integer> monUnits2001 = new HashMap<>();
 
             if (DEBUG){
+                pers.put("uuid:4ace0a50-5eb5-11ea-9c2c-5ef3fc9bb22f", 1983);
+                compareSDNNTlicences(sdnntHost, pers, "periodical");
                 pers.put("uuid:f41ba5e1-4bfc-11e1-8bb9-005056a60003", 2003);
                 pers.put("uuid:51596ad0-68a3-11e4-8d66-5ef3fc9bb22f", 2003);
                 pers.put("uuid:94cd1ef0-0b88-11ea-9e5a-5ef3fc9bb22f", 2012);
                 pers.put("uuid:169c1730-3d6f-11e4-bdb5-005056825209", 9999);
                 pers.put("uuid:0557fa00-f23f-11e3-97c9-001018b5eb5c", 9999);
+
+
                 perVols.put("uuid:69016ad0-5eba-11ea-a5e6-005056825209", 2018);
+                //compareSDNNTlicences(sdnntHost, perVols, "periodicalvolume");
                 perVols.put("uuid:8cab0875-b8b7-4771-9014-c9afae9e306f", 2014);
+
             }
 
             if (!DEBUG){ //PREDDEFINOVANE BLOKY, Peclive zkontroluj nazvy, predpoklada se vstup v souboru IO/493/parts
@@ -79,10 +87,10 @@ public class checkYearOfPublication implements Script {
                 inputPids.clear();
                 compareSDNNTlicences(sdnntHost, pers, "periodical");*/
 
-                List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2011perVolLAST"); //read from made input
+                /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2011perVolLAST"); //read from made input
                 perVols = makeHashMap(inputPids);
                 inputPids.clear();
-                compareSDNNTlicences(sdnntHost, perVols, "periodicalvolume");
+                compareSDNNTlicences(sdnntHost, perVols, "periodicalvolume");*/
 
                 /*List<String> inputPids = fileService.readFileLineByLine("IO/493/parts/part2008mon10000"); //read from made input
                 mons2008 = makeHashMap(inputPids);
@@ -144,6 +152,7 @@ public class checkYearOfPublication implements Script {
         }
     }
 
+    // get and separate input data to files
     private void getSolrDocuments(String solrQuery, String doctype){
         List<String> pids = solrConn.getPids(solrQuery, 1000000, DEBUG);
         List<String> parts = new ArrayList<>();
@@ -164,6 +173,7 @@ public class checkYearOfPublication implements Script {
         }
     }
 
+    //create hashmap from input pids, finds datum_begin for every pid in a list
     private HashMap<String, Integer> makeHashMap(List<String> pids){
         HashMap<String, Integer> result = new HashMap<>();
         for (String pid : pids){
@@ -181,28 +191,65 @@ public class checkYearOfPublication implements Script {
         addDNNTT.clear();
         forReindex.clear();
 
+        boolean isRoot = false;
+        if ((fedoraModel.equals("periodical")) || (fedoraModel.equals("monograph")))
+            isRoot = true;
+
         LOG.add(fedoraModel);
         for (String pid : docsToCompare.keySet()){
             LOG.add("CHECKING UUID: " + pid);
             SdnntConnNEW sdnntConnNEW = findDocInSDNNT(sdnntHost, pid);
-            if (sdnntConnNEW != null) //document found in SDNNT
-                if (sdnntConnNEW.getDocsFound() > 1) { //do not compare licences in this situation
+            if (sdnntConnNEW != null) { //it means document was found in SDNNT
+                if (sdnntConnNEW.getResponseCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR){
+                    anomaly.add(pid);
+                    continue;
+                }
+                if (sdnntConnNEW.getDocsFound() > 1) { //do not compare licences, when there is more than one doc found
                     LOG.add("SDNNT response has multiple docs found for this doc: " + pid);
                     anomaly.add(pid);
-                }
-                else {
-                    if (isSdnntFoundDocSame(sdnntConnNEW.getJsonResponse(), pid)){
+                } else {
+                    if (isSdnntFoundDocSame(sdnntConnNEW, pid, isRoot)) {
                         LOG.add("Documents matches!");
                         //compare licences
                         List<String> SDNNTlicences = new ArrayList<>();
-                        if (fedoraModel.equals("periodical") || fedoraModel.equals("monograph")) //it's root
+                        if (isRoot){ //it's root
                             SDNNTlicences = sdnntConnNEW.getSdnntLicences(true, pid);
+                            //budeme se tvarit, ze SDNNTlicences nemaji dnnt-o, kdyz najdeme states:N u potomka
+                            if ((docsToCompare.get(pid) >= 2001) && (docsToCompare.get(pid) <= 2007)){
+                                if((sdnntConnNEW.granularityContainsStatesN()) && (SDNNTlicences.contains("dnnto")))
+                                    SDNNTlicences.remove("dnnto");
+                            }
+                            else { //budeme se tvarit, ze SDNNTlicences nemaji zadnou licenci, kdyz najdeme states:N u potomka
+                                if(sdnntConnNEW.granularityContainsStatesN())
+                                    SDNNTlicences.clear();
+                            }
+                        }
                         else //it's child
                             SDNNTlicences = sdnntConnNEW.getSdnntLicences(false, pid);
                         String MZKlics = solrConn.getSolrParameterByPid(pid, "dnnt-labels", true);
                         compareLics(SDNNTlicences, MZKlics, pid, docsToCompare.get(pid));
                     }
                 }
+            }
+            else { //document was not found in SDNNT
+                LOG.add("Document was not found in SDNNT, pid:" + pid);
+                if (docsToCompare.get(pid) == 9999)
+                    forReindex.add(pid);
+                String MZKlics = solrConn.getSolrParameterByPid(pid, "dnnt-labels", true);
+                if ((fedoraModel.equals("monograph") || fedoraModel.equals("monographunit"))
+                        && ((docsToCompare.get(pid) >= 2001) && (docsToCompare.get(pid) <= 2007))){
+                    //remove DNNT-O if it exists
+                    if (MZKlics.contains("dnnto"))
+                        removeDNNTO.add(pid);
+                }
+                else if (docsToCompare.get(pid) != 9999){
+                    // remove DNNT labels if they exists
+                    if (MZKlics.contains("dnnto"))
+                        removeDNNTO.add(pid);
+                    if (MZKlics.contains("dnntt"))
+                        removeDNNTT.add(pid);
+                }
+            }
         }
         fileService.toOutputFile(removeDNNTO, "IO/493/removeDNNTO" + fedoraModel + ".txt");
         fileService.toOutputFile(removeDNNTT, "IO/493/removeDNNTT" + fedoraModel + ".txt");
@@ -222,12 +269,14 @@ public class checkYearOfPublication implements Script {
                 if (MZKlicenses.contains("dnnto")){
                     if (datum_begin == 9999)
                         forReindex.add(uuid);
-                    removeDNNTO.add(uuid);
+                    else
+                        removeDNNTO.add(uuid);
                 }
                 if (MZKlicenses.contains("dnntt")){
                     if (datum_begin == 9999)
                         forReindex.add(uuid);
-                    removeDNNTT.add(uuid);
+                    else
+                        removeDNNTT.add(uuid);
                 }
             }
         } else {
@@ -237,12 +286,14 @@ public class checkYearOfPublication implements Script {
                     if (lic.equals("dnnto")){
                         if (datum_begin == 9999)
                             forReindex.add(uuid);
-                        addDNNTO.add(uuid);
+                        else
+                            addDNNTO.add(uuid);
                     }
                     if (lic.equals("dnntt")){
                         if (datum_begin == 9999)
                             forReindex.add(uuid);
-                        addDNNTT.add(uuid);
+                        else
+                            addDNNTT.add(uuid);
                     }
                 }
             }
@@ -270,19 +321,20 @@ public class checkYearOfPublication implements Script {
     //response is SDNNT response
     //pid is from SOLR
     // its rly basic check
-    private boolean isSdnntFoundDocSame(String response, String pid){
-        if (response.contains(pid)) // SDNNT response contains SOLR pid
-            return true;
-        else {
-            String solrDocName = solrConn.getSolrParameterByPid(pid, "root_title", true); //periodical volume can contain an empty title
-            if (response.contains(solrDocName))
+    private boolean isSdnntFoundDocSame(SdnntConnNEW sdnntConnNEW, String pid, boolean isRoot){
+        if (isRoot){
+            if (sdnntConnNEW.responseContentsPidInRootPidsAndLinks(pid))
                 return true;
-            else{
-                LOG.add("Documents does NOT match");
-                anomaly.add(pid);
-                return false;
-            }
+            String solrTitle = solrConn.getSolrParameterByPid(pid, "root_title", true); //periodical volume can contain an empty title
+            if (sdnntConnNEW.responseContentsTitleInRootTitle(solrTitle))
+                return true;
+        } else {
+            if (sdnntConnNEW.getJsonResponse().contains(pid))
+                return true;
         }
+        LOG.add("Documents does NOT match");
+        anomaly.add(pid);
+        return false;
     }
 
 
@@ -290,6 +342,11 @@ public class checkYearOfPublication implements Script {
     // if document is not found, than returns null
     private SdnntConnNEW findDocInSDNNT(String sdnntHost, String pid){
         SdnntConnNEW sdnntConnNEW = new SdnntConnNEW(sdnntHost, "?query=" + pid);
+        if (sdnntConnNEW.getResponseCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR){
+            LOG.add("SDNNT INTERNAL SERVER ERROR "+sdnntConnNEW.getResponseCode()+" for pid:" + pid);
+            return sdnntConnNEW;
+        }
+
         boolean docFound = false;
         //check for uuid in SDNNT
         if (sdnntConnNEW.isDocumentFound()){
@@ -436,12 +493,7 @@ public class checkYearOfPublication implements Script {
     poznamka: states:N znamena nezarazeno, neni na seznamu
     poznamka: pids pravdepodobne znamena pids, ktere maji stejny dnnt jako root - OVERIT!
     poznamka: granularity pravdepodobne znamena, ze jsou v dokumentu rocniky s ruznymi licencemi - OVERIT!
-    poznamka: po porade s Romanem si vypisu i ty dokumenty, kde by se mel zrusit covid, alespon do souboru
-                a pripadne je zacnu menit
 
-
-    TODO PRIPADNE PRIDAT KONTROLU PODLE ISBN - a mozna taky ne, kdyz na miste issn dane isbn
-    TODO pridat kontrolu podle nazvu
 
  */
 

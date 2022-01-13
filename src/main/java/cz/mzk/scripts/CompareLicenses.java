@@ -1,5 +1,6 @@
 package cz.mzk.scripts;
 
+import cz.mzk.KrameriusVersion;
 import cz.mzk.services.FileIO;
 import cz.mzk.services.SdnntConnNEW;
 import cz.mzk.services.SolrUtils;
@@ -12,7 +13,7 @@ import java.util.*;
 
 public class CompareLicenses implements Script {
     FileIO fileService = new FileIO();
-    SolrUtils solrConn = new SolrUtils();
+    SolrUtils solrConn = new SolrUtils(KrameriusVersion.K5);
     public void start(Properties prop) {
         final String sdnntHost = prop.getProperty("SDNNT_HOST_PRIVATE_PART_API_CATALOG");
         List<String> input = fileService.readFileLineByLine("IO/compareLicenses/input");

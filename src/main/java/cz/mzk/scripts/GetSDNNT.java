@@ -1,5 +1,6 @@
 package cz.mzk.scripts;
 
+import cz.mzk.KrameriusVersion;
 import cz.mzk.services.FileIO;
 
 import java.util.*;
@@ -60,7 +61,7 @@ public class GetSDNNT implements Script{
     }
 
     private String getCnb(String pid){
-        SolrUtils solrConn = new SolrUtils();
+        SolrUtils solrConn = new SolrUtils(KrameriusVersion.K5);
         String identifiers = solrConn.getSolrParameterByPid(pid, "dc.identifier", true);
         String cnb = parseIdentifiers(identifiers);
         return cnb;

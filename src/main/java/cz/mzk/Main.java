@@ -1,6 +1,7 @@
 package cz.mzk;
 
 
+import ch.qos.logback.core.ConsoleAppender;
 import cz.mzk.scripts.*;
 import cz.mzk.services.GetPropertyValues;
 
@@ -18,8 +19,7 @@ public class Main {
             System.err.println("ERROR: cannot read config.properties");
             e.printStackTrace();
         }
-
-        final String scriptName = "checkYearOfPublication";
+        final String scriptName = "updatePrivacyRegularly";
         Script script = null;
 
         switch (scriptName){
@@ -73,6 +73,22 @@ public class Main {
             }
             case "DistributionToExcelSheets": {
                 script = new DistributionToExcelSheets();
+                break;
+            }
+            case "logTutorial": {
+                script = new logTutorial();
+                break;
+            }
+            case "soundDocsRelationsCheck": {
+                script = new soundDocsRelationsCheck();
+                break;
+            }
+            case "addDataToExcelAndCompareWithSDNNT_issue527": {
+                script = new addDataToExcelAndCompareWithSDNNT_issue527();
+                break;
+            }
+            case "countScans": {
+                script = new countScans();
                 break;
             }
             default:{

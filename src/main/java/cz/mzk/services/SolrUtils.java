@@ -1,5 +1,6 @@
 package cz.mzk.services;
 
+import cz.mzk.KrameriusVersion;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.solr.client.solrj.SolrQuery;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -17,15 +18,21 @@ public class SolrUtils {
     HttpSolrClient solr;
     private static final GetPropertyValues properties = new GetPropertyValues();
     private static Properties prop;
+    private String solrPidFieldName;
 
-    public SolrUtils(){
+    public SolrUtils(KrameriusVersion krameriusVersion){
         try {
             prop = properties.getPropValues();
         } catch (IOException e){
             System.err.println("ERROR: cannot read config.properties");
             e.printStackTrace();
         }
-        String solrHost = prop.getProperty("SOLR_HOST");
+        String solrHost = prop.getProperty("SOLR_HOST_K5");
+        solrPidFieldName = "PID";
+        if (krameriusVersion == KrameriusVersion.K7){
+            solrHost = prop.getProperty("SOLR_HOST_K7_search");
+            solrPidFieldName = "pid";
+        }
         solr = new HttpSolrClient.Builder(solrHost).build();
         solr.setParser(new XMLResponseParser());
     }
@@ -40,7 +47,7 @@ public class SolrUtils {
             uuid = pid.substring(5);
 
         //query.setQuery("PID:\"uuid:" + uuid + "\"").setRows(1);
-        query.setQuery("PID:\"uuid:" + uuid + "\"");
+        query.setQuery(solrPidFieldName + ":\"uuid:" + uuid + "\"");
         query.addField(parameter);
 
         try {
@@ -69,7 +76,11 @@ public class SolrUtils {
         List<String> allPids = new ArrayList<>();
         final int maxBatchSize = 50000;
         int start = 0;
-        List<String> batchPids = getPidsBatch(q, start, maxBatchSize);
+        List<String> batchPids;
+        if (maxPids < maxBatchSize)
+            batchPids = getPidsBatch(q, start, maxPids);
+        else
+            batchPids = getPidsBatch(q, start, maxBatchSize);
         allPids.addAll(batchPids);
 
         while (batchPids.size() == maxBatchSize){
@@ -98,18 +109,50 @@ public class SolrUtils {
         List<String> pidsBatch = new ArrayList<>();
         SolrQuery query = new SolrQuery();
         query.setQuery(q);
-        query.addField("PID");
+        query.addField(solrPidFieldName);
         query.add("start", Integer.toString(start));
         query.add("rows", Integer.toString(rows));
         try {
             QueryResponse response = solr.query(query);
             SolrDocumentList docList = response.getResults();
             for (org.apache.solr.common.SolrDocument entries : docList) {
-                pidsBatch.add((String)entries.getFieldValue("PID"));
+                pidsBatch.add((String)entries.getFieldValue(solrPidFieldName));
             }
         } catch (SolrServerException | IOException e) {
             e.printStackTrace();
         }
         return pidsBatch;
     }
+
+    public boolean pidExistsInSolr(String pid){
+        String pidFound = getSolrParameterByPid(pid, solrPidFieldName, false);
+        return !pidFound.isEmpty();
+    }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

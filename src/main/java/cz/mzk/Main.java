@@ -19,7 +19,7 @@ public class Main {
             System.err.println("ERROR: cannot read config.properties");
             e.printStackTrace();
         }
-        final String scriptName = "updatePrivacyRegularly";
+        final String scriptName = "addDataToExcelHudebniny";
         Script script = null;
 
         switch (scriptName){
@@ -89,6 +89,10 @@ public class Main {
             }
             case "countScans": {
                 script = new countScans();
+                break;
+            }
+            case "addDataToExcelHudebniny": {
+                script = new addDataToExcelHudebniny();
                 break;
             }
             default:{

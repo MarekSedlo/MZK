@@ -78,6 +78,23 @@ public class XMLparser {
 
         return imgUrl;
     }
+
+    public String extractSigla(StringBuilder RELS_EXT_FOXML){
+        String sigla = RELS_EXT_FOXML.toString();
+        String[] lines = sigla.split("\n");
+        String parsedSigla = "";
+        for (String line:lines){
+            if (line.contains("mods:physicalLocation")){
+                sigla = line.split(">")[1];
+                for (int i=0; i<sigla.length(); i++){
+                    if (sigla.charAt(i) == '<')
+                        break;
+                    parsedSigla += sigla.charAt(i);
+                }
+            }
+        }
+        return parsedSigla;
+    }
 }
 
 

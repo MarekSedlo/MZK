@@ -322,8 +322,11 @@ public class updatePrivacyRegularly implements Script{
             210-1900
          */
 
+        String query = "";
+        List<String> pidsForPrivacyChange = new ArrayList<>();
+        List<String> pidsPerio = new ArrayList<>();
 
-        String query = publicationYearSolrQ + ":["+fromYearAllDocs+" TO 18] AND NOT "+dnntLabelSolrQ+":license AND NOT "+modelSolrQ+":page";
+        query = publicationYearSolrQ + ":["+fromYearAllDocs+" TO 18] AND NOT "+dnntLabelSolrQ+":license AND NOT "+modelSolrQ+":page";
         List<String> pidsAllTypes = solrUtils.getPids(query, maxPidsToRead, true);
 
         query = publicationYearSolrQ + ":[21 TO 189] AND NOT " + dnntLabelSolrQ + ":license AND NOT "+modelSolrQ+":page";
@@ -334,7 +337,7 @@ public class updatePrivacyRegularly implements Script{
 
         List<String> rootPids = extractRoot(pidsAllTypes);
 
-        List<String> pidsForPrivacyChange = getPidsForPrivacyChange(rootPids, fromYearAllDocs, toYearAllDocs);
+        pidsForPrivacyChange = getPidsForPrivacyChange(rootPids, fromYearAllDocs, toYearAllDocs);
 
         logger.info("\n\n\n\n#################################################################" +
                 "\nALL DOCUMENTS TO "+toYearAllDocs+" DONE, check for periodicals and their volumes from "+fromYearPeriodicals+" to "+toYearPeriodicals+":\n#################################################################" +
@@ -346,12 +349,27 @@ public class updatePrivacyRegularly implements Script{
          */
 
         query = publicationYearSolrQ + ":190 AND " + documentTypeSolrQ + ":periodical AND NOT " + dnntLabelSolrQ + ":license";
-        List<String> pidsPerioPrivate = solrUtils.getPids(query, maxPidsToRead, true);
+        pidsPerio = solrUtils.getPids(query, maxPidsToRead, true);
 
         query = publicationYearSolrQ + ":["+fromYearPeriodicals+" TO "+toYearPeriodicals+"] AND " + documentTypeSolrQ + ":periodical AND NOT " + dnntLabelSolrQ + ":license";
-        pidsPerioPrivate.addAll(solrUtils.getPids(query, maxPidsToRead, true));
+        pidsPerio.addAll(solrUtils.getPids(query, maxPidsToRead, true));
 
-        pidsForPrivacyChange.addAll(getPidsForPrivacyChange(pidsPerioPrivate, fromYearPeriodicals, toYearPeriodicals));
+        //get parents of volumes (because volumes sometimes have parents with wrong datum vydani)
+        query = publicationYearSolrQ + ":[3 TO 18] AND " + documentTypeSolrQ + ":periodicalvolume AND NOT " + dnntLabelSolrQ + ":license";
+        List<String> perVols = solrUtils.getPids(query, maxPidsToRead, true);
+        query = publicationYearSolrQ + ":[21 TO 190] AND " + documentTypeSolrQ + ":periodicalvolume AND NOT " + dnntLabelSolrQ + ":license";
+        perVols.addAll(solrUtils.getPids(query, maxPidsToRead, true));
+        query = publicationYearSolrQ + ":[210 TO "+toYearPeriodicals+"] AND " + documentTypeSolrQ + ":periodicalvolume AND NOT " + dnntLabelSolrQ + ":license";
+        perVols.addAll(solrUtils.getPids(query, maxPidsToRead, true));
+
+        for (String volume:perVols){
+            String root = solrUtils.getSolrParameterByPid(volume, "root_pid", false);
+            if (!pidsPerio.contains(root)){
+                pidsPerio.add(root);
+            }
+        }
+
+        pidsForPrivacyChange.addAll(getPidsForPrivacyChange(pidsPerio, fromYearPeriodicals, toYearPeriodicals));
 
         //unnecessary test, solr query guarantee, that there are no dnnt labels "license"
         List<String> pidsToMakePublic = new ArrayList<>();

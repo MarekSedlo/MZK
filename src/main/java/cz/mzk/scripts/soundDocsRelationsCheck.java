@@ -151,26 +151,6 @@ public class soundDocsRelationsCheck implements Script{
     }
 }
 
-/*TODO zkontroluj tyto dokumenty:
-uuid:2842527c-6ce5-4253-b751-127765ad3621 - recording, ktery neni na fedore, ale v solru ano
-uuid:0aaae8ea-8d03-42ff-b185-91f8d4e0c6ac - recording, ktery neni na fedore, ale v solru ano
-uuid:35c23644-fa06-42b2-8c19-d0fe6128b376 - recording, ktery neni na fedore, ale v solru ano
-uuid:082cb81e-8726-4722-9454-9002e1228a4d - recording, ktery neni na fedore, ale v solru ano
-uuid:17dc2766-9f46-474f-bf48-9af8cac4bcf3 - recording, ktery neni na fedore, ale v solru ano
-uuid:26865f8c-68de-4aab-88c2-c655074bdd81 - recording, ktery neni na fedore, ale v solru ano
-uuid:1e76ec47-a5e5-42c1-85bb-494fdcac69da - recording, ktery neni na fedore, ale v solru ano
-uuid:0083a2e1-435c-49f3-a4f0-8f7b0666935d - recording, ktery neni na fedore, ale v solru ano
-
-
-Children got from recordings: 2763
-Children got from recordings, which are soundunits: 1470
-Num of soundunits from solr query: 1503
-
-Chybí odkazy na některé soundunits, zkontroluj soundrecordings, kde jsou soundunits, které třeba neexistují - na fedore neexistuje 8 soundunits, ktere jsou v solru
-poraď se o tom s někým, zeptej se jak poznat, že chybí potomek, jak poznat komu by měl patřit
-Připrogramuj projití všech soundunits ve fedoře, jestli existují a udělej z toho výpis, jestli jsou z těch, kde mám odkazy od soundrecording nebo jestli je to přímo z solrQuery, kde hledám soundunit - ty, ktere neexistuji jsou jen ty ze solrQuery
-*/
-
 
 
 

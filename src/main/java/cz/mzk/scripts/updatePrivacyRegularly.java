@@ -210,11 +210,7 @@ public class updatePrivacyRegularly implements Script{
     //Pokud ma root pid vnoucata, tak zkontroluje i deti a da je spolecne i s rootem do seznamu, ktery vraci
     private List<String> getPidsForPrivacyChange(List<String> inputRootPids, int fromYear, int toYear){
         List<String> result = new ArrayList<>();
-        int count = 0;
         for (String rootPid:inputRootPids){
-            if (count % 1000 == 0)
-                System.out.println(count + " DONE out of " + inputRootPids.size()); //just FYI
-            count++;
             logger.info("CHECK ROOT: " + rootPid);
             if (!pidExistsInFedora(rootPid)) //TODO zjistit, jestli se v K7 bude delat kontrola, zda se dokument nachazi na fedore, respektive jak se bude delat kontrola, jestli dokument existuje
                 continue;

@@ -28,6 +28,7 @@ public class updatePrivacyRegularly implements Script{
     private final int maxPidsToRead = 1000000;
     private final boolean K7 = false;
     private List<String> notFoundInFedora = new ArrayList<>(); // TODO zjistit, jak se bude delat kontrola na akubre
+    private List<String> notFoundInSolr = new ArrayList<>(); // v pripade K7 jde o search solr
     private final int fromYearAllDocs = 3;
     private final int toYearAllDocs = 1900;
     private final int fromYearPeriodicals = toYearAllDocs+1;
@@ -45,6 +46,7 @@ public class updatePrivacyRegularly implements Script{
     private String documentTypeSolrQ;
     private String rootPidSolrQ;
     private String dnntLabelSolrQ; //TODO POZOR ZJISTIT JESTE JAK JE NAPSANE DNNT V K7!
+    private String modelSolrQ;
 
 
     private void loggerInit(){
@@ -206,19 +208,25 @@ public class updatePrivacyRegularly implements Script{
 
     //Tato funkce vraci seznam pidu, ktere se maji zmenit na verejne (predpoklada se vstup root pidů)
     //Pokud ma root pid vnoucata, tak zkontroluje i deti a da je spolecne i s rootem do seznamu, ktery vraci
-    private List<String> getPidsForPrivacyChange(List<String> inputRootPids, boolean publicInput, int fromYear, int toYear){
+    private List<String> getPidsForPrivacyChange(List<String> inputRootPids, int fromYear, int toYear){
         List<String> result = new ArrayList<>();
+        int count = 0;
         for (String rootPid:inputRootPids){
+            if (count % 1000 == 0)
+                System.out.println(count + " DONE out of " + inputRootPids.size()); //just FYI
+            count++;
             logger.info("CHECK ROOT: " + rootPid);
             if (!pidExistsInFedora(rootPid)) //TODO zjistit, jestli se v K7 bude delat kontrola, zda se dokument nachazi na fedore, respektive jak se bude delat kontrola, jestli dokument existuje
                 continue;
-            if (publicInput){
+            boolean isInputRootPublic = isPidPublic(rootPid);
+            if (isInputRootPublic){
                 //zkontrolovat deti, jestli maji byt public
                 List<String> childrenToCheck = getChildrenForCheck(rootPid); //tato funkce vraci deti na kontrolu dostupnosti (pouze deti, ktere maji sve vlastni deti)
                 for (String child:childrenToCheck){
                     logger.info("CHECK CHILD: " + child);
                     if (!solrUtils.pidExistsInSolr(child)){
                         logger.warning("pid does not exist in solr: " + child + " SKIPPING\n");
+                        notFoundInSolr.add(child);
                         continue;
                     }
                     if (isPidPublic(child))
@@ -245,6 +253,7 @@ public class updatePrivacyRegularly implements Script{
                         logger.info("CHECK CHILD: " + childPid);
                         if (!solrUtils.pidExistsInSolr(childPid)){
                             logger.warning("pid does not exist in solr: " + childPid + " SKIPPING\n");
+                            notFoundInSolr.add(childPid);
                             changeRootToPublic = false;
                             continue;
                         }
@@ -299,6 +308,7 @@ public class updatePrivacyRegularly implements Script{
             documentTypeSolrQ = "model";
             rootPidSolrQ = "root.pid";
             dnntLabelSolrQ = "TODO!!!"; //TODO!!!
+            modelSolrQ = "model";
         }
         else { //K5
             solrUtils = new SolrUtils(KrameriusVersion.K5);
@@ -307,6 +317,7 @@ public class updatePrivacyRegularly implements Script{
             documentTypeSolrQ = "fedora.model";
             rootPidSolrQ = "root_pid";
             dnntLabelSolrQ = "dnnt-labels";
+            modelSolrQ = "fedora.model";
         }
 
         /* interval for checking all types
@@ -315,19 +326,19 @@ public class updatePrivacyRegularly implements Script{
             210-1900
          */
 
-        String query = publicationYearSolrQ + ":["+fromYearAllDocs+" TO 18] AND " + privacySolrQ + ":private AND NOT " + dnntLabelSolrQ + ":license";
+
+        String query = publicationYearSolrQ + ":["+fromYearAllDocs+" TO 18] AND NOT "+dnntLabelSolrQ+":license AND NOT "+modelSolrQ+":page";
         List<String> pidsAllTypes = solrUtils.getPids(query, maxPidsToRead, true);
 
-        query = publicationYearSolrQ + ":[21 TO 189] AND " + privacySolrQ + ":private AND NOT " + dnntLabelSolrQ + ":license";
+        query = publicationYearSolrQ + ":[21 TO 189] AND NOT " + dnntLabelSolrQ + ":license AND NOT "+modelSolrQ+":page";
         pidsAllTypes.addAll(solrUtils.getPids(query, maxPidsToRead, true));
 
-        query = publicationYearSolrQ + ":[210 TO "+toYearAllDocs+"] AND " + privacySolrQ + ":private AND NOT " + dnntLabelSolrQ + ":license";
+        query = publicationYearSolrQ + ":[210 TO "+toYearAllDocs+"] AND NOT " + dnntLabelSolrQ + ":license AND NOT "+modelSolrQ+":page";
         pidsAllTypes.addAll(solrUtils.getPids(query, maxPidsToRead, true));
 
-        List<String> rootPids = extractRoot(pidsAllTypes); //realna data, zakomentovano, protoze to trva
+        List<String> rootPids = extractRoot(pidsAllTypes);
 
-        //all types from fromYearAllDocs to toYearAllDocs
-        List<String> pidsForPrivacyChange = getPidsForPrivacyChange(rootPids, false, fromYearAllDocs, toYearAllDocs);
+        List<String> pidsForPrivacyChange = getPidsForPrivacyChange(rootPids, fromYearAllDocs, toYearAllDocs);
 
         logger.info("\n\n\n\n#################################################################" +
                 "\nALL DOCUMENTS TO "+toYearAllDocs+" DONE, check for periodicals and their volumes from "+fromYearPeriodicals+" to "+toYearPeriodicals+":\n#################################################################" +
@@ -338,27 +349,13 @@ public class updatePrivacyRegularly implements Script{
             1901-1911
          */
 
-        query = publicationYearSolrQ + ":190 AND " + documentTypeSolrQ + ":periodical AND " + privacySolrQ + ":private AND NOT " + dnntLabelSolrQ + ":license";
+        query = publicationYearSolrQ + ":190 AND " + documentTypeSolrQ + ":periodical AND NOT " + dnntLabelSolrQ + ":license";
         List<String> pidsPerioPrivate = solrUtils.getPids(query, maxPidsToRead, true);
 
-        query = publicationYearSolrQ + ":["+fromYearPeriodicals+" TO "+toYearPeriodicals+"] AND " + documentTypeSolrQ + ":periodical AND " + privacySolrQ + ":private AND NOT " + dnntLabelSolrQ + ":license";
+        query = publicationYearSolrQ + ":["+fromYearPeriodicals+" TO "+toYearPeriodicals+"] AND " + documentTypeSolrQ + ":periodical AND NOT " + dnntLabelSolrQ + ":license";
         pidsPerioPrivate.addAll(solrUtils.getPids(query, maxPidsToRead, true));
 
-
-        //private periodicals from fromYearPeriodicals to toYearPeriodicals
-        pidsForPrivacyChange.addAll(getPidsForPrivacyChange(pidsPerioPrivate, false, fromYearPeriodicals, toYearPeriodicals));
-
-
-        //#################################################
-        query = publicationYearSolrQ + ":190 AND " + documentTypeSolrQ + ":periodical AND " + privacySolrQ + ":public AND NOT " + dnntLabelSolrQ + ":license";
-        List<String> pidsPerioPublic = solrUtils.getPids(query, maxPidsToRead, true);
-
-        query = publicationYearSolrQ + ":["+fromYearPeriodicals+" TO "+toYearPeriodicals+"] AND " + documentTypeSolrQ + ":periodical AND " + privacySolrQ + ":public AND NOT " + dnntLabelSolrQ + ":license";
-        pidsPerioPublic.addAll(solrUtils.getPids(query, maxPidsToRead, true));
-
-        //public periodicals from fromYearPeriodicals to toYearPeriodicals
-        pidsForPrivacyChange.addAll(getPidsForPrivacyChange(pidsPerioPublic, true, fromYearPeriodicals, toYearPeriodicals));
-
+        pidsForPrivacyChange.addAll(getPidsForPrivacyChange(pidsPerioPrivate, fromYearPeriodicals, toYearPeriodicals));
 
         //unnecessary test, solr query guarantee, that there are no dnnt labels "license"
         List<String> pidsToMakePublic = new ArrayList<>();
@@ -370,33 +367,6 @@ public class updatePrivacyRegularly implements Script{
 
         fileIO.toOutputFile(pidsToMakePublic, "IO/438/pidsToMakePublic.txt");
         fileIO.toOutputFile(notFoundInFedora, "IO/438/notFoundInFedora.txt");
+        fileIO.toOutputFile(notFoundInSolr, "IO/438/notFoundInSolr.txt");
     }
 }
-
-/*
-    OTAZKY
-    1. Existuji rocniky(potomci), kteri maji rok vydani treba mensi, nez 1900 nebo mensi, nez 1911,
-    ale jejich root pid ma rok vydani 0, co s tim? Je treba je menit? Je treba nejak opravit root pid?
-
-    2. Spise zajimavost, vickrat je tam situace, kdy root dokument je v intervalu, ale ani jeden jeho rocnik ne. Asi netreba resit
- */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

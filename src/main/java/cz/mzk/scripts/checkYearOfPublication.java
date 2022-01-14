@@ -464,39 +464,6 @@ public class checkYearOfPublication implements Script {
 }
 
 
-/*
-    postup
-    1. najdu v solru uuid s danymi roky vydani, roztridit do kategorii podle typu dokumentu
-    (mozna si to ukladat do dictionary, [uuid : rok_vydani] - kvuli pozdejsi kontrole roku 9999)
-        1.1 ASI RADEJI UDELAT AZ V BODE 4
-        Zkontrolovat, ze rok vydani neni 9999, pripadne takove dokumenty reindexovat
-        //TODO da se to reindexovat v krameriu, ale nasel jsem 791 rootu perodik, ktere maji 9999 datum_begin
-    2. pri pruchodu si udelam funkci, ktera si pro dane uuid vyhleda a vyparsuje ze solru cnb a issn
-    3. prochazim bud cele periodikum nebo rocnik s danym rokem vydani (to stejne pro monografie),
-        3.1 musi byt vypsano v logu jaky typ dokumentu menim, tzn. fedora.model
-        3.2 pokud hledam root, tak do SDNNT vyzkouset dat uuid
-            3.2.1 kdyz nenajde, tak cnb bez prefixu
-            3.2.2 kdyz nenajde, tak issn bez prefixu
-        3.3 porovnat licence nase a v SDNNT pro dany root dokument, najit licence a states (podivat se asi rovnou i do pids a granularity),
-            mel bych sledovat licence i states, pokud je tam states:N, tak by tam pravdepodobne nemelo byt licence,
-            zkontrolovat i ohledne toho, ze ve states muze byt pravdepodobne vice polozek
-        3.4 pokud hledam child, tak do SDNNT opet vyzkouset dat uuid, cnb, issn
-            3.4.1 NAJDE SE JEHO ROOT!!! Takze najit v granularity link, ktery konci s uuid childu (nenalezen vypsat), pozor je tam i root
-            3.4.2 v nalezenem childu v granularity porovnat licence podobne jako v kroku 3.3
-    4. Zkontrolovat roky vydani vsech dokumentu, ktere budu chtit menit,
-            pokud budou 9999, tak zjistit kolik jakych typu dokumentu je potreba reindexovat
-
-    5. fofola
-        5.1 pokud menim root, tak odskrtnou checkbar, abych zmenil opravdu jen root
-        5.2 pokud menim child (rocnik), tak zaskrtnou checkbar, abych zmenil cely child i s jeho dalsimi potomky
-
-    poznamka: states:N znamena nezarazeno, neni na seznamu
-    poznamka: pids pravdepodobne znamena pids, ktere maji stejny dnnt jako root - OVERIT!
-    poznamka: granularity pravdepodobne znamena, ze jsou v dokumentu rocniky s ruznymi licencemi - OVERIT!
-
-
- */
-
 
 
 
